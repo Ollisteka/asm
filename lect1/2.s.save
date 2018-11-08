@@ -1,0 +1,12 @@
+.globl _start   #точка входа
+.text 			#секция кода с исполняемыми машинными командами
+
+_start:
+
+
+	mov	1,  %eax
+	xor 	%ebx, %ebx
+	int	$0x80
+
+.data
+messg: .ascii "Hello, world!"

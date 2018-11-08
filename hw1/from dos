@@ -1,0 +1,12 @@
+	cmp 	$27,	%bl		#esc - стирает символ?
+	je		print_dot	
+	cmp 	$13,	%bl		#возврат каретки
+	je		print_dot	
+	cmp 	$10,	%bl		#newl		
+	je		print_dot	
+	cmp 	$9,		%bl		#horizontal tab
+	je		print_dot	
+	cmp 	$8,		%bl		#backspace
+	je		print_dot
+	cmp 	$7,		%bl		#колокольчик, не звенит :(	
+	je		print_dot
