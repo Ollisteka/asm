@@ -1,24 +1,24 @@
 .globl _start
+.include  "macro.s"
 
 EXIT 	 = 60
-READ 	 = 0
-WRITE 	 = 1
 OPEN 	 = 2
-CLOSE 	 = 3
 SYS_IN   = 0
 SYS_OUT  = 1
 MINUS 	 = 45
+
 
 .data
     hwmsg:	    .ascii	"Hello, world!\n"
     hwlen = . - hwmsg
 	fname: 		.ascii "new.txt"
-	from:		.ascii "f"      # al
-	count:		.ascii "c"      # ah
-	input:		.ascii "i"      # bl
-	output:		.ascii "o"      # bh
+	from:		.ascii "f"      # r8
+	count:		.ascii "c"      # r9
+	input:		.ascii "i"      # r10
+	output:		.ascii "o"      # r11
     error_text:     .ascii  "Неправильные аргументы!\n"
     err_len      =  . - error_text
+    buffer:	    .ascii	" "
 
 .text
 _start:
@@ -32,7 +32,7 @@ read_args:
 	pop 	%rdi
 
     cmp		$0,		%rdi
-	je		prog
+	je		main
 
 	cmpb	$MINUS, (%rdi)
 	je 		parse_flag
@@ -59,64 +59,90 @@ parse_flag:
 
     jmp     error
 
-read_from:
-    xor     %rcx, %rcx
-	pop 	%rdi
-    mov     %al,  %cl
-    mov     %rdi, %rax
-    mov     %cl,   %al
+read_from:    
+	pop 	%rsi   
+    call parse_num  # записывает число в rax   
+    mov     %rax,   %r8
 	jmp read_args
 
 read_count:
-    xor     %rcx, %rcx
-	pop 	%rdi
-    mov     %ah,  %cl
-    mov     %rdi, %rax
-    mov     %cl,   %ah
+   	pop 	%rsi    
+    call parse_num        # записывает число в rax   
+    mov     %rax,   %r9
 	jmp read_args
 
 read_in:
-    xor     %rcx, %rcx
-	pop 	%rdi
-    mov     %bl,  %cl
-    mov     %rdi, %rbx
-    mov     %cl,  %bl
+	pop 	%r10
 	jmp read_args
 
 read_out:
-    xor     %rcx, %rcx
-	pop 	%rdi
-    mov     %bh,  %cl
-    mov     %rdi, %rbx
-    mov     %cl,  %bh
+	pop 	%r11
 	jmp read_args
 
+main:
+    cmp     $0,     %r10  # check input
+    je      error 
+     
+    add     %r8,    %r9   # finish = from + count
+    push	%r11
+    open    %r10, $0 # readonly
+    mov     %rax,   %r12
+    pop 	%r11
+    cmp     $0,     %r11  # check output
+    jne     print_to_file
 
-    mov     $fname, %rdi
-    mov     $101,   %rsi        # write only
-    mov     $OPEN,  %rax
-    syscall # fd -> rax
-    push    %rax
+print_to_console:
+    mov		$SYS_OUT, 	%r14
+    xor     %rcx,       %rcx
+    jmp     skip_loop
 
-    mov     %rax,   %rdi
-    mov     $hwmsg, %rsi
-    mov     $hwlen, %rdx
-    mov     $WRITE,     %rax
-    syscall
+print_to_file:
+    open    %r11    $101 # write only and create
+    mov     %rax,   %r14
+    xor     %rcx,   %rcx
 
-    pop 	%rdi
-    mov 	$CLOSE, %rax
-	syscall
-	
-prog:
+skip_loop:
+    cmp     %rcx,   %r8
+    je      write_loop
+
+    push    %rcx
+    read_char %r12 buffer
+    cmp     $0,      %rax
+    je      close_files 
+
+    pop     %rcx
+    inc     %rcx
+    jmp     skip_loop
+
+write_loop:
+    cmp     %rcx,   %r9
+    je      close_files
+
+read:    
+    push    %rcx
+    read_char %r12 buffer   # в rax - количество прочитанных символов   
+    
+    cmp     $0,      %rax
+    je      close_files 
+    
+    print %r14 buffer
+    pop     %rcx
+    inc     %rcx
+    jmp     write_loop
+
+close_files:
+    close     %r12
+
+    cmp     $0,     %r11  # check output
+    jne     close_output
+    jmp     exit
+
+close_output:
+    close    %r14
     jmp     exit
 
 error:
-    mov		$error_text, 	%rsi	
-    mov		$WRITE, 	%rax
-	mov		$SYS_OUT, 	%rdi
-	mov		$err_len,	%rdx
-	syscall
+    print $SYS_OUT error_text err_len
 
 exit:
     movq    $EXIT,  %rax
