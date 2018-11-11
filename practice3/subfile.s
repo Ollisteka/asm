@@ -6,12 +6,10 @@ OPEN 	 = 2
 SYS_IN   = 0
 SYS_OUT  = 1
 MINUS 	 = 45
-
+READONLY = 0
+WRITE_OR_CREATE = 101
 
 .data
-    hwmsg:	    .ascii	"Hello, world!\n"
-    hwlen = . - hwmsg
-	fname: 		.ascii "new.txt"
 	from:		.ascii "f"      # r8
 	count:		.ascii "c"      # r9
 	input:		.ascii "i"      # r10
@@ -22,12 +20,11 @@ MINUS 	 = 45
 
 .text
 _start:
-
     pop     %rdi    # тут число аргументов
     cmp     $7,     %rdi
     jb      error
-	# если аргументов меньше чем 7 или больше чем 9 - брось ошибку
 	pop     %rdi    # тут имя файла
+
 read_args:
 	pop 	%rdi
 
@@ -67,7 +64,7 @@ read_from:
 
 read_count:
    	pop 	%rsi    
-    call parse_num        # записывает число в rax   
+    call parse_num   # записывает число в rax   
     mov     %rax,   %r9
 	jmp read_args
 
@@ -85,9 +82,10 @@ main:
      
     add     %r8,    %r9   # finish = from + count
     push	%r11
-    open    %r10, $0 # readonly
+    open    %r10    $READONLY
     mov     %rax,   %r12
     pop 	%r11
+
     cmp     $0,     %r11  # check output
     jne     print_to_file
 
@@ -97,7 +95,7 @@ print_to_console:
     jmp     skip_loop
 
 print_to_file:
-    open    %r11    $101 # write only and create
+    open    %r11    $WRITE_OR_CREATE
     mov     %rax,   %r14
     xor     %rcx,   %rcx
 
@@ -106,7 +104,7 @@ skip_loop:
     je      write_loop
 
     push    %rcx
-    read_char %r12 buffer
+    read_char   %r12    buffer
     cmp     $0,      %rax
     je      close_files 
 
@@ -119,13 +117,13 @@ write_loop:
     je      close_files
 
 read:    
-    push    %rcx
-    read_char %r12 buffer   # в rax - количество прочитанных символов   
+    push        %rcx
+    read_char   %r12  buffer   # в rax - количество прочитанных символов   
     
     cmp     $0,      %rax
     je      close_files 
     
-    print %r14 buffer
+    print   %r14    buffer
     pop     %rcx
     inc     %rcx
     jmp     write_loop
@@ -133,7 +131,7 @@ read:
 close_files:
     close     %r12
 
-    cmp     $0,     %r11  # check output
+    cmp     $0,     %r11
     jne     close_output
     jmp     exit
 
