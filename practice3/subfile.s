@@ -2,7 +2,6 @@
 .include  "macro.s"
 
 EXIT 	 = 60
-OPEN 	 = 2
 SYS_IN   = 0
 SYS_OUT  = 1
 MINUS 	 = 45
