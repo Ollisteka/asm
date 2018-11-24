@@ -27,12 +27,15 @@ D_LIT = 100
     lhide_cursor = . - hide_cursor
     show_cursor: .ascii  "\x1B[?25h"
     lshow_cursor = . - show_cursor
+    yellow: .ascii "\x1B[33m"
+    lyellow = . - yellow
     # "\x1B[n;mH"  n - строка, m - столбец
 
 .text
     main:
     echo hide_cursor lhide_cursor
     echo clear lclear
+    echo yellow lyellow
 
 move:
     echo xchar
