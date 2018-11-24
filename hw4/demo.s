@@ -7,20 +7,11 @@ S_LIT = 115
 W_LIT = 119
 A_LIT = 97
 D_LIT = 100
-ONE = 49
-TWO = 50
-THREE = 51
-FOUR = 52
-FIVE = 53
-SIX = 54
-SEVEN = 55
-EIGHT = 56
-NINE = 57
 
 .text
-    main:
-    echo hide_cursor lhide_cursor
-    echo clear lclear
+main:
+    hide_cursor
+    cls
 
 move:
     echo xchar
@@ -29,7 +20,7 @@ move:
     push    %rax
     echo    cback lcback
     pop     %rax
-
+d:
     cmp     $ESC,    %al
     je      ex
 
@@ -56,44 +47,8 @@ move:
     echo    cright lcright
 
 1:
-    cmp     $ONE,    %al
-    jne     1f
-    echo    black lblack
-
-1:
-    cmp     $TWO,    %al
-    jne     1f
-    echo    red lred
-
-1:
-    cmp     $THREE,    %al
-    jne     1f
-    echo    green lgreen
-    
-1:
-    cmp     $FOUR,    %al
-    jne     1f
-    echo    yellow lyellow
-
-1:
-    cmp     $FIVE,    %al
-    jne     1f
-    echo    blue lblue
-
-1:
-    cmp     $SIX,    %al
-    jne     1f
-    echo    magenta lmagenta
-
-1:
-    cmp     $SEVEN,    %al
-    jne     1f
-    echo    cyan lcyan
-    
-1:
-    cmp     $EIGHT,    %al
-    jne     1f
-    echo    white lwhite
+    call    try_change_fg_color
+    jmp     1f
 
 center:    
     movq    $buffer,    %rdi
@@ -115,19 +70,17 @@ center:
     append $h_big
 
     echo    buffer  lbuffer
+
 1:    
     jmp     move
 
 ex:
-    echo clear lclear
-    echo show_cursor lshow_cursor
-    mov $60,    %rax
-    syscall
+    cls
+    show_cursor
+    exit
 
 
 .data
-    clear:  .ascii "\x1B[H\x1B[J"
-    lclear = . - clear
     xchar:  .ascii "x"
     schar:  .ascii " "
     cback:  .ascii "\x1B[D \x1B[D"
@@ -140,26 +93,6 @@ ex:
     lcleft = . - cleft
     cright: .ascii "\x1B[C"
     lcright = . - cright
-    hide_cursor: .ascii "\x1B[?25l"
-    lhide_cursor = . - hide_cursor
-    show_cursor: .ascii  "\x1B[?25h"
-    lshow_cursor = . - show_cursor
-    black: .ascii "\x1B[30m"
-    lblack = . - black
-    red: .ascii "\x1B[31m"
-    lred = . - red
-    green: .ascii "\x1B[32m"
-    lgreen = . - green
-    yellow: .ascii "\x1B[33m"
-    lyellow = . - yellow
-    blue: .ascii "\x1B[34m"
-    lblue = . - blue
-    magenta: .ascii "\x1B[35m"
-    lmagenta = . - magenta
-    cyan: .ascii "\x1B[36m"
-    lcyan = . - cyan
-    white: .ascii "\x1B[37m"
-    lwhite = . - white
     esc_seq: .ascii "\x1B["
     lesc_seq = . - esc_seq
     semicolon: .ascii ";"

@@ -29,7 +29,6 @@
 	syscall
 .endm
 
-
 .macro  echo   str len=1
 	mov 		$1,    %rax
 	mov 		$1,  %rdi
@@ -49,3 +48,33 @@
     shr     %rax
     call    num_to_str
 .endm
+
+.macro cls
+	.data
+		clear:  .ascii "\x1B[H\x1B[J"
+		lclear = . - clear
+	.text
+		echo clear lclear
+.endm
+
+.macro hide_cursor
+	.data
+		hide_cursor: .ascii "\x1B[?25l"
+    	lhide_cursor = . - hide_cursor
+	.text
+		echo hide_cursor lhide_cursor
+.endm
+
+.macro show_cursor
+	.data
+		show_cursor: .ascii  "\x1B[?25h"
+    	lshow_cursor = . - show_cursor
+	.text
+		echo show_cursor lshow_cursor
+.endm
+
+.macro exit
+	mov $60,    %rax
+    syscall
+.endm
+
