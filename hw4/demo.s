@@ -16,50 +16,11 @@ SIX = 54
 SEVEN = 55
 EIGHT = 56
 NINE = 57
-Q_LIT = 113
-
-.data
-    clear:  .ascii "\x1B[H\x1B[J"
-    lclear = . - clear
-    xchar:  .ascii "x"
-    schar:  .ascii " "
-    cback:  .ascii "\x1B[D \x1B[D"
-    lcback = . - cback
-    cdown:  .ascii "\x1B[B"
-    lcdown = . - cdown
-    cup:  .ascii "\x1B[A"
-    lcup = . - cup
-    cleft: .ascii "\x1B[D"
-    lcleft = . - cleft
-    cright: .ascii "\x1B[C"
-    lcright = . - cright
-    hide_cursor: .ascii "\x1B[?25l"
-    lhide_cursor = . - hide_cursor
-    show_cursor: .ascii  "\x1B[?25h"
-    lshow_cursor = . - show_cursor
-    black: .ascii "\x1B[30m"
-    lblack = . - black
-    red: .ascii "\x1B[31m"
-    lred = . - red
-    green: .ascii "\x1B[32m"
-    lgreen = . - green
-    yellow: .ascii "\x1B[33m"
-    lyellow = . - yellow
-    blue: .ascii "\x1B[34m"
-    lblue = . - blue
-    magenta: .ascii "\x1B[35m"
-    lmagenta = . - magenta
-    cyan: .ascii "\x1B[36m"
-    lcyan = . - cyan
-    white: .ascii "\x1B[37m"
-    lwhite = . - white
-    # "\x1B[n;mH"  n - строка, m - столбец
 
 .text
     main:
     echo hide_cursor lhide_cursor
     echo clear lclear
-   # echo yellow lyellow
 
 move:
     echo xchar
@@ -71,8 +32,9 @@ move:
 
     cmp     $ESC,    %al
     je      ex
-   # cmp     $SPACE,    %al
-   # je      center
+
+    cmp     $SPACE,    %al
+    je      center
 
     cmp     $S_LIT,   %al
     jne     1f
@@ -133,6 +95,26 @@ move:
     jne     1f
     echo    white lwhite
 
+center:    
+    movq    $buffer,    %rdi
+
+    append  $esc_seq $lesc_seq
+
+    push    %rdi
+    get_half_of cwdith
+    pop    %rdi
+    append %rax %rbx
+
+    append $semicolon
+
+    push    %rdi
+    get_half_of cheight
+    pop    %rdi
+    append %rax %rbx
+
+    append $h_big
+
+    echo    buffer  lbuffer
 1:    
     jmp     move
 
@@ -141,3 +123,47 @@ ex:
     echo show_cursor lshow_cursor
     mov $60,    %rax
     syscall
+
+
+.data
+    clear:  .ascii "\x1B[H\x1B[J"
+    lclear = . - clear
+    xchar:  .ascii "x"
+    schar:  .ascii " "
+    cback:  .ascii "\x1B[D \x1B[D"
+    lcback = . - cback
+    cdown:  .ascii "\x1B[B"
+    lcdown = . - cdown
+    cup:  .ascii "\x1B[A"
+    lcup = . - cup
+    cleft: .ascii "\x1B[D"
+    lcleft = . - cleft
+    cright: .ascii "\x1B[C"
+    lcright = . - cright
+    hide_cursor: .ascii "\x1B[?25l"
+    lhide_cursor = . - hide_cursor
+    show_cursor: .ascii  "\x1B[?25h"
+    lshow_cursor = . - show_cursor
+    black: .ascii "\x1B[30m"
+    lblack = . - black
+    red: .ascii "\x1B[31m"
+    lred = . - red
+    green: .ascii "\x1B[32m"
+    lgreen = . - green
+    yellow: .ascii "\x1B[33m"
+    lyellow = . - yellow
+    blue: .ascii "\x1B[34m"
+    lblue = . - blue
+    magenta: .ascii "\x1B[35m"
+    lmagenta = . - magenta
+    cyan: .ascii "\x1B[36m"
+    lcyan = . - cyan
+    white: .ascii "\x1B[37m"
+    lwhite = . - white
+    esc_seq: .ascii "\x1B["
+    lesc_seq = . - esc_seq
+    semicolon: .ascii ";"
+    h_big: .ascii "H"
+    buffer: .ascii "           " # "\x1B[n;mH"  n - строка, m - столбец
+    lbuffer = . - buffer
+    

@@ -38,3 +38,14 @@
 	syscall
 .endm
 
+.macro  append   str len=$1
+    mov     \str,   %rsi
+    mov     \len, %rcx
+    rep movsb
+.endm
+
+.macro  get_half_of  func
+    call    \func
+    shr     %rax
+    call    num_to_str
+.endm
