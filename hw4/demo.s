@@ -12,15 +12,29 @@ D_LIT = 100
 main:
     hide_cursor
     cls
+    xor   %r14, %r14    # сюда буду класть максимальную колонку
+    xor   %r15, %r15    # текущая колонка 
+    mov   $1,   %r15
 
 move:
     echo xchar
     call    getch
 
     push    %rax
+    # посмотреть, а не в последней ли мы колонке
+    call    cheight
+    mov     %rax,   %r14
+    cmp     %r14,   %r15
+    je      last_column
     echo    cback lcback
     pop     %rax
-d:
+    jmp     compare
+
+last_column:
+    echo    cbackcol lcbackcol
+    pop     %rax
+
+compare:
     cmp     $ESC,    %al
     je      ex
 
@@ -29,21 +43,41 @@ d:
 
     cmp     $S_LIT,   %al
     jne     1f
+    cmp     %r14,   %r15   # уже на краю экрана
+    jne     pr_d
+    echo    schar
+pr_d:
     echo    cdown lcdown
+    
 
 1:
     cmp     $W_LIT,   %al
     jne     1f
+    cmp     %r14,   %r15   # уже на краю экрана
+    jne     pr_w
+    echo    schar
+pr_w:
     echo    cup lcup
 
 1:
     cmp     $A_LIT,   %al
     jne     1f
+    cmp     $1,   %r15
+    je      1f
+    cmp     %r14,   %r15    # уже на краю экрана
+    jne     dec_d
+    echo    schar
+dec_d:
+    dec     %r15
+pr_a:
     echo    cleft lcleft
 
 1:
     cmp     $D_LIT,   %al
     jne     1f
+    cmp     %r14,   %r15   # уже на краю экрана
+    je      1f
+    inc     %r15
     echo    cright lcright
 
 1:
@@ -70,6 +104,9 @@ center:
     append $h_big
 
     echo    buffer  lbuffer
+    call    cheight
+    shr     %rax
+    mov     %rax,   %r15
 
 1:    
     jmp     move
@@ -85,6 +122,8 @@ ex:
     schar:  .ascii " "
     cback:  .ascii "\x1B[D \x1B[D"
     lcback = . - cback
+    cbackcol: .ascii "\x1B[D "
+    lcbackcol = . - cbackcol
     cdown:  .ascii "\x1B[B"
     lcdown = . - cdown
     cup:  .ascii "\x1B[A"

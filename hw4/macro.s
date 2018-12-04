@@ -1,5 +1,9 @@
 .nolist
 
+.data
+	clear:  .ascii "\x1B[H\x1B[J"
+	lclear = . - clear
+
 .macro  read_char reg buff
     mov		$0, 	    %rax
 	mov		\reg,   	%rdi
@@ -50,11 +54,7 @@
 .endm
 
 .macro cls
-	.data
-		clear:  .ascii "\x1B[H\x1B[J"
-		lclear = . - clear
-	.text
-		echo clear lclear
+	echo clear lclear
 .endm
 
 .macro hide_cursor
