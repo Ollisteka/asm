@@ -17,25 +17,43 @@ main:
     mov   $3,   %r15
 
 move:
-    echo    xchar lxchar
-    call    getch
-
-    push    %rax
-    # посмотреть, а не в последней ли мы колонке
     call    cheight
     mov     %rax,   %r14
     cmp     %r14,   %r15
+    je      move_to_last_column
+
+    echo    xchar lxchar    
+    echo    cchstart lcchstart
+    echo    cdown lcdown
+    echo    xchar lxchar
+    jmp     get_char
+
+move_to_last_column:
+    echo    xchar lxchar    
+    echo    cchstart lcchstart
+    echo    cdown lcdown
+    echo    cright lcright
+    echo    xchar lxchar
+
+get_char:
+    call    getch
+    push    %rax
+    cmp     %r14,   %r15
     je      last_column
     echo    cback lcback
-    pop     %rax
+    echo    cup lcup
+    echo    cchend lcchend
+    echo    cback lcback
     jmp     compare
 
 last_column:
     echo    cbackcol lcbackcol
-   
-    pop     %rax
+    echo    cup lcup
+    echo    cchend lcchend
+    echo    cbackcol lcbackcol
 
 compare:
+    pop     %rax
     cmp     $ESC,    %al
     je      ex
 
@@ -69,9 +87,7 @@ compare:
     jmp     1f
 re:
     echo    cback lcback
-    echo    cright lcright
-    echo    cright lcright
-    echo    cright lcright
+    echo    cchend lcchend
 1:
     call    try_change_fg_color
     jmp     1f
@@ -98,7 +114,7 @@ center:
     echo    buffer  lbuffer
     call    cheight
     shr     %rax
-    add     $2,     %rax
+    add     $5,     %rax
     mov     %rax,   %r15
 
 1:    
@@ -115,6 +131,10 @@ ex:
     lxchar = . - xchar
     schar:  .ascii " "
     lschar = . - schar
+    cchstart: .ascii "\x1B[D\x1B[D\x1B[D"
+    lcchstart = . - cchstart
+    cchend: .ascii "\x1B[C\x1B[C\x1B[C"
+    lcchend = . - cchend
     cback:  .ascii "\x1B[D\x1B[D\x1B[D   \x1B[D\x1B[D\x1B[D"
     lcback = . - cback
     cbackcol: .ascii "\x1B[D\x1B[D\x1B[D    \x1B[D\x1B[D"
