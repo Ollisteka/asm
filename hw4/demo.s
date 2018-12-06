@@ -89,8 +89,10 @@ center:
 
     append  $esc_seq $lesc_seq
 
+    push    %r15
     push    %rdi
     get_half_of cwdith
+
     pop    %rdi
     append %rax %rbx
 
@@ -103,6 +105,12 @@ center:
 
     append $h_big
 
+    pop     %r15
+    cmp     %r14,   %r15   # уже на краю экрана
+    jne     pr_buf
+    echo    schar
+
+pr_buf:
     echo    buffer  lbuffer
     call    cheight
     shr     %rax
