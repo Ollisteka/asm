@@ -14,7 +14,7 @@ main:
     cls
     xor   %r14, %r14    # сюда буду класть максимальную колонку
     xor   %r15, %r15    # текущая колонка 
-    mov   $2,   %r15
+    mov   $3,   %r15
 
 move:
     echo    xchar lxchar
@@ -71,6 +71,7 @@ re:
     echo    cback lcback
     echo    cright lcright
     echo    cright lcright
+    echo    cright lcright
 1:
     call    try_change_fg_color
     jmp     1f
@@ -97,7 +98,7 @@ center:
     echo    buffer  lbuffer
     call    cheight
     shr     %rax
-    inc     %rax
+    add     $2,     %rax
     mov     %rax,   %r15
 
 1:    
@@ -110,13 +111,13 @@ ex:
 
 
 .data
-    xchar:  .ascii "xx"
+    xchar:  .ascii "xxx"
     lxchar = . - xchar
     schar:  .ascii " "
     lschar = . - schar
-    cback:  .ascii "\x1B[D\x1B[D  \x1B[D\x1B[D"
+    cback:  .ascii "\x1B[D\x1B[D\x1B[D   \x1B[D\x1B[D\x1B[D"
     lcback = . - cback
-    cbackcol: .ascii "\x1B[D\x1B[D   \x1B[D"
+    cbackcol: .ascii "\x1B[D\x1B[D\x1B[D    \x1B[D\x1B[D"
     lcbackcol = . - cbackcol
     cdown:  .ascii "\x1B[B"
     lcdown = . - cdown
