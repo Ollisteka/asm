@@ -17,7 +17,7 @@ main:
     mov   $1,   %r15
 
 move:
-    echo xchar
+    echo    xchar
     call    getch
 
     push    %rax
@@ -43,20 +43,11 @@ compare:
 
     cmp     $S_LIT,   %al
     jne     1f
-    cmp     %r14,   %r15   # уже на краю экрана
-    jne     pr_d
-    echo    schar
-pr_d:
     echo    cdown lcdown
-    
 
 1:
     cmp     $W_LIT,   %al
     jne     1f
-    cmp     %r14,   %r15   # уже на краю экрана
-    jne     pr_w
-    echo    schar
-pr_w:
     echo    cup lcup
 
 1:
@@ -64,20 +55,19 @@ pr_w:
     jne     1f
     cmp     $1,   %r15
     je      1f
-    cmp     %r14,   %r15    # уже на краю экрана
-    jne     dec_d
-    echo    schar
-dec_d:
     dec     %r15
-pr_a:
     echo    cleft lcleft
 
 1:
     cmp     $D_LIT,   %al
     jne     1f
     cmp     %r14,   %r15   # уже на краю экрана
-    je      1f
+    je      re
     inc     %r15
+    echo    cright lcright
+    jmp     1f
+re:
+    echo    cback lcback
     echo    cright lcright
 
 1:
@@ -89,10 +79,8 @@ center:
 
     append  $esc_seq $lesc_seq
 
-    push    %r15
     push    %rdi
     get_half_of cwdith
-
     pop    %rdi
     append %rax %rbx
 
@@ -105,12 +93,6 @@ center:
 
     append $h_big
 
-    pop     %r15
-    cmp     %r14,   %r15   # уже на краю экрана
-    jne     pr_buf
-    echo    schar
-
-pr_buf:
     echo    buffer  lbuffer
     call    cheight
     shr     %rax
@@ -130,7 +112,7 @@ ex:
     schar:  .ascii " "
     cback:  .ascii "\x1B[D \x1B[D"
     lcback = . - cback
-    cbackcol: .ascii "\x1B[D "
+    cbackcol: .ascii "\x1B[D  "
     lcbackcol = . - cbackcol
     cdown:  .ascii "\x1B[B"
     lcdown = . - cdown
