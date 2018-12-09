@@ -57,7 +57,7 @@ print:
     ss: .word 0, 0, 0, 0, 0, 0, 0, 0
     s0: cell 0, "a", 1
     s1: cell 1, "b", 1
-    ls = . - ss
+    ls = 6 # 3*2
     after: .word 0, 0, 0, 0
 
     example: .ascii "1"

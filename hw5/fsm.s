@@ -254,7 +254,7 @@ cont_ex:
     s3: cell 3, "/", 4
     s4: cell 4, "a", 5
     s5: cell 5, "a", 5
-        cell 5, ".", 6
+        cell 5, ".", 6 # 10
     s6: cell 6, "a", 7
     s7: cell 7, "a", 7
         cell 7, ":", 8
@@ -264,7 +264,7 @@ cont_ex:
         cell 7, "#", 15
     s8: cell 8, "0", 9
     s9: cell 9, "0", 9
-        cell 9, "/", 10
+        cell 9, "/", 10 # 20
         cell 9, "?", 12
         cell 9, "#", 15
     s10: cell 10, "a", 11
@@ -274,19 +274,17 @@ cont_ex:
          cell 11, "#", 15
     s12: cell 12, "a", 13
     s13: cell 13, "&", 12
-         cell 13, "a", 13
+         cell 13, "a", 13 # 30
          cell 13, "=", 14
     s14: cell 14, "a", 14
          cell 14, "&", 12
          cell 14, "#", 15
-    s15: cell 15, "a", 15
-         cell 15, "#", 99
-         cell 15, "&", 99
-    s99: cell 99, "a", 99
-    ls = . - ss
+    s15: cell 15, "a", 15 # 35
+
+    ls = 70 # 35 * 2
     after: .word 0, 0, 0, 0
 
-    example: .ascii "a.aa:000/aa/a"
+    example: .ascii "a.aa:0#aa"
     lexample = . - example
 
     result: .ascii "  \n"
