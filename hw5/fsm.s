@@ -9,22 +9,31 @@
     .word 0xFFFF, 0xFFFF, 0xFFFF
 .endm
 
+.macro cycle_letters source, dest 
+    cell \source, "a", \dest
+    cell \source, "b", \dest
+    cell \source, "c", \dest
+    cell \source, "d", \dest
+    cell \source, "e", \dest
+    cell \source, "f", \dest
+.endm
+
+.macro cycle_numbers source, dest 
+    cell \source, 0, \dest
+    cell \source, 1, \dest
+    cell \source, 2, \dest
+    cell \source, 3, \dest
+    cell \source, 4, \dest
+.endm
+
 EMPTY_ANCHOR = 128
-EMPTY_ANCHOR_MASK = 0b10000000
 END = 64
-END_MASK = 0b1000000
 PROTOCOL = 32
-PROTOCOL_MASK = 0b100000
 HOST = 16
-HOST_MASK = 0b010000
 PORT = 8
-PORT_MASK = 0b001000
 PATH = 4
-PATH_MASK = 0b000100
 QUERY = 2
-QUERY_MASK = 0b000010
 ANCHOR = 1
-ANCHOR_MASK = 0b000001
 #  arg1  arg2  arg3  arg4  arg5  arg6  arg7
 #  rdi   rsi   rdx   r10   r8    r9    -
 .text
@@ -57,110 +66,89 @@ lp:
     je path_pr
     cmp $15, %ah # прочитали query и есть anchor
     je query_pr
-    jmp 1f
+    jmp save_ch_to_buf
     
 protocol_pr:
-    mov  $PROTOCOL_MASK, %r15
-    and  %r12,   %r15
-    cmp  $0,    %r15
-    jne 1f
+    jmp_if_bit_set PROTOCOL, save_ch_to_buf
+
     echo protocol lprotocol
     or $PROTOCOL, %r12
     add  $2, %r9
     jmp print_buf
 
 host_pr:
-    mov  $HOST_MASK, %r15
-    and  %r12,   %r15
-    cmp  $0,    %r15
-    jne 1f
+    jmp_if_bit_set HOST, save_ch_to_buf
+
     echo host lhost
     or $HOST, %r12
-cont:
     jmp print_buf
 
 port_pr:
-    mov  $HOST, %r15 
-    and  %r12,   %r15
-    cmp  $0,    %r15 # перепрыгнули на конец порта, на напечатав хост
-    jne  cont_port
-    or $PORT, %r12
+    jmp_if_bit_set HOST, cont_port
+
+    or $PORT, %r12 # перепрыгнули на конец порта, на напечатав хост == порта не было
     jmp   host_pr
  
 cont_port:
-    mov  $PORT_MASK, %r15
-    and  %r12,   %r15
-    cmp  $0,    %r15
-    jne 1f
+    jmp_if_bit_set PORT, save_ch_to_buf  # сюда возвращаемся, парся query
 
     echo port lport
     or $PORT, %r12
     jmp print_buf
 
 path_pr:
-    mov  $PORT, %r15 
-    and  %r12,   %r15
-    cmp  $0,    %r15 # перепрыгнули на конец порта, на напечатав хост
-    jne  cont_path
-    or $PATH, %r12
-    jmp   port_pr
+    jmp_if_bit_set PORT, cont_path
+
+    or $PATH, %r12  # перепрыгнули на конец пути, на напечатав порт == пути не было
+    jmp  port_pr
 
 cont_path:
-    mov  $PATH_MASK, %r15
-    and  %r12,   %r15
-    cmp  $0,    %r15
-    jne 1f
+    jmp_if_bit_set PATH, save_ch_to_buf
 
     echo path lpath
     or $PATH, %r12
     jmp print_buf
 
 query_pr:
-    mov  $PORT, %r15 
-    and  %r12,   %r15
-    cmp  $0,    %r15 # перепрыгнули на конец query, на напечатав порт
-    jne  cont_query
-    or $QUERY, %r12
+    jmp_if_bit_set PORT, cont_query
+
+    or $QUERY, %r12 # перепрыгнули на конец query, на напечатав порт == query не было
     jmp   port_pr
  
 cont_query:
-    mov  $QUERY_MASK, %r15
-    and  %r12,   %r15
-    cmp  $0,    %r15
-    jne 1f
+    jmp_if_bit_set QUERY, save_ch_to_buf
 
     echo query lquery
     or $QUERY, %r12
     jmp print_buf
 
 anchor_pr:
-    mov  $QUERY_MASK, %r15
-    and  %r12,   %r15
-    cmp  $0,    %r15
-    jne cont_anch
+    jmp_if_bit_set QUERY, cont_anch
+
     or  $ANCHOR, %r12
     or  $EMPTY_ANCHOR, %r12
     inc %r9
     jmp query_pr
 
 cont_anch:
-    mov  $ANCHOR_MASK, %r15
-    and  %r12,   %r15
-    cmp  $0,    %r15
-    jne 1f
+    jmp_if_bit_set ANCHOR, save_ch_to_buf
+
     echo anchor lanchor
     or $ANCHOR, %r12
     jmp print_buf
     
 print_buf:
-    mov $lexample, %rdx
+    mov  $lexample, %rdx
     sub  %r10, %rdx
     sub  %r9, %rdx
-    mov  $END_MASK, %r15
+
+    mov  $END, %r15
     and  %r12,   %r15
     cmp  $0,    %r15
     jne  cont_print
+
     dec  %rdx
+
 cont_print:
     mov $1,    %rax
 	mov $1,    %rdi
@@ -178,7 +166,7 @@ clear_buf:
     repnz stosb
     echo newl
 
-1:
+save_ch_to_buf:
     pop %rax
     mov $lexample, %rdx
     sub  %r10, %rdx # cдвиг относительно начала строки
@@ -246,45 +234,45 @@ cont_ex:
 
 .data
     ss: .word 0, 0, 0, 0, 0, 0, 0, 0
-    s0: cell 0, "a", 1
-    s1: cell 1, "a", 1
+    s0: cycle_letters 0, 1  # 6
+    s1: cycle_letters 1, 1  # 6
         cell 1, ":", 2
         cell 1, ".", 6
     s2: cell 2, "/", 3
     s3: cell 3, "/", 4
-    s4: cell 4, "a", 5
-    s5: cell 5, "a", 5
-        cell 5, ".", 6 # 10
-    s6: cell 6, "a", 7
-    s7: cell 7, "a", 7
+    s4: cycle_letters 4, 5  # 6
+    s5: cycle_letters 5, 5  # 6
+        cell 5, ".", 6
+    s6: cycle_letters 6, 7  # 6
+    s7: cycle_letters 7, 7  # 6 
         cell 7, ":", 8
         cell 7, ".", 6
         cell 7, "/", 10
         cell 7, "?", 12
         cell 7, "#", 15
-    s8: cell 8, "0", 9
-    s9: cell 9, "0", 9
-        cell 9, "/", 10 # 20
+    s8: cycle_numbers 8, 9 # 5
+    s9: cycle_numbers 9, 9 # 5
+        cell 9, "/", 10
         cell 9, "?", 12
         cell 9, "#", 15
-    s10: cell 10, "a", 11
-    s11: cell 11, "a", 11
+    s10: cycle_letters 10, 11  # 6 
+    s11: cycle_letters 11, 11  # 6 
          cell 11, "/", 10
          cell 11, "?", 12
          cell 11, "#", 15
-    s12: cell 12, "a", 13
+    s12: cycle_letters 12, 13  # 6
     s13: cell 13, "&", 12
-         cell 13, "a", 13 # 30
+         cycle_letters 13, 13  # 6
          cell 13, "=", 14
-    s14: cell 14, "a", 14
+    s14: cycle_letters 14, 14  # 6
          cell 14, "&", 12
          cell 14, "#", 15
-    s15: cell 15, "a", 15 # 35
+    s15: cycle_letters 15, 15  # 6
 
-    ls = 70 # 35 * 2
+    ls = 206 # (12*6 + 5*2 + 20) * 2 
     after: .word 0, 0, 0, 0
 
-    example: .ascii "a.aa:0#aa"
+    example: .ascii "bace://a.bc.def:012334/a/b/c/d/e/f?a=b&bb&c=fff#abcddf"
     lexample = . - example
 
     result: .ascii "  \n"

@@ -78,3 +78,15 @@
     syscall
 .endm
 
+.macro is_bit_not_set mask, flag_reg=%r12
+	mov  $\mask, 	   %r15
+    and  \flag_reg,   %r15
+    cmp  $0,    	   %r15 # == true, когда бит не установлен
+.endm
+
+.macro jmp_if_bit_set mask, label, flag_reg=%r12
+	mov  $\mask, 	   %r15
+    and  \flag_reg,   %r15
+    cmp  $0,    	   %r15
+	jne  \label # прыгнем, если бит установлен
+.endm
