@@ -34,6 +34,8 @@ PORT = 8
 PATH = 4
 QUERY = 2
 ANCHOR = 1
+
+STACK_OFFSET = 8
 #  arg1  arg2  arg3  arg4  arg5  arg6  arg7
 #  rdi   rsi   rdx   r10   r8    r9    -
 .text
@@ -46,7 +48,9 @@ _start:
     # в rax - количество прочитанных символов
 
     dec  %rax
-    mov  %rax,  %r13
+bb:                     
+    sub $STACK_OFFSET, %rsp
+    mov %rax, 8(%rsp)
 
     echo newl
     xor %r9, %r9
@@ -55,7 +59,7 @@ _start:
 
     mov $0, %dl         # state
     mov $example, %r8  # str
-    mov %r13, %r10 # length
+    mov 8(%rsp), %r10 # length
    
 lp:
     cmp $0, %r10
@@ -80,7 +84,6 @@ lp:
     
 protocol_pr:
     jmp_if_bit_set PROTOCOL, save_ch_to_buf
-
     echo protocol lprotocol
     or $PROTOCOL, %r12
     add  $2, %r9
@@ -148,7 +151,7 @@ cont_anch:
     jmp print_buf
     
 print_buf:
-    mov  %r13, %rdx
+    mov  $lbuffer, %rdx
     sub  %r10, %rdx
     sub  %r9, %rdx
 
@@ -178,7 +181,7 @@ clear_buf:
 
 save_ch_to_buf:
     pop %rax
-    mov %r13, %rdx
+    mov 8(%rsp), %rdx
     sub  %r10, %rdx # cдвиг относительно начала строки
     sub  %r9, %rdx
     movb %al,   buffer(%rdx)
@@ -277,7 +280,7 @@ cont_ex:
     ls = (. - ss) / 8
     after: .word 0, 0, 0, 0
 
-    example: .ascii "                                                         "
+    example: .skip 50
     lexample = . - example
     linput: .word 0
 
@@ -312,6 +315,5 @@ cont_ex:
     space: .ascii " "
     newl: .ascii "\n"
 
-    host_printed = 0
-    last_printed_len = 0
-    
+    out_buffer: .skip 150
+    lout_buffer = . - out_buffer
