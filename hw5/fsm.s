@@ -35,7 +35,7 @@ PATH = 4
 QUERY = 2
 ANCHOR = 1
 
-STACK_OFFSET = 8
+STACK_OFFSET = 16
 #  arg1  arg2  arg3  arg4  arg5  arg6  arg7
 #  rdi   rsi   rdx   r10   r8    r9    -
 .text
@@ -48,9 +48,9 @@ _start:
     # в rax - количество прочитанных символов
 
     dec  %rax
-bb:                     
+    mov %rsp, %rbp
     sub $STACK_OFFSET, %rsp
-    mov %rax, 8(%rsp)
+    mov %rax, -8(%rbp)
 
     echo newl
     xor %r9, %r9
@@ -59,7 +59,7 @@ bb:
 
     mov $0, %dl         # state
     mov $example, %r8  # str
-    mov 8(%rsp), %r10 # length
+    mov -8(%rbp), %r10 # length
    
 lp:
     cmp $0, %r10
@@ -84,6 +84,7 @@ lp:
     
 protocol_pr:
     jmp_if_bit_set PROTOCOL, save_ch_to_buf
+
     echo protocol lprotocol
     or $PROTOCOL, %r12
     add  $2, %r9
@@ -151,7 +152,7 @@ cont_anch:
     jmp print_buf
     
 print_buf:
-    mov  $lbuffer, %rdx
+    mov  -8(%rbp), %rdx
     sub  %r10, %rdx
     sub  %r9, %rdx
 
@@ -181,7 +182,7 @@ clear_buf:
 
 save_ch_to_buf:
     pop %rax
-    mov 8(%rsp), %rdx
+    mov -8(%rbp), %rdx
     sub  %r10, %rdx # cдвиг относительно начала строки
     sub  %r9, %rdx
     movb %al,   buffer(%rdx)
