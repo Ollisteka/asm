@@ -269,10 +269,11 @@ cont_ex:
          cell 14, "#", 15
     s15: cycle_letters 15, 15  # 6
 
-    ls = 206 # (12*6 + 5*2 + 20) * 2 
+    # ls = 206 # (12*6 + 5*2 + 20) * 2 
+    ls = (. - ss) / 8
     after: .word 0, 0, 0, 0
 
-    example: .ascii "bace://a.bc.def:012334/a/b/c/d/e/f?a=b&bb&c=fff#abcddf"
+    example: .ascii "bace://a.bc.def:012334/a/b/c/d/e/f#abcddf"
     lexample = . - example
 
     result: .ascii "  \n"
