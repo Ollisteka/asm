@@ -38,7 +38,16 @@ ANCHOR = 1
 #  rdi   rsi   rdx   r10   r8    r9    -
 .text
 _start:
-    echo example lexample
+    mov		$0, 	%rax
+	mov		$0, 	%rdi
+    mov		$example, 	%rsi
+	mov		$lexample,	%rdx
+    syscall
+    # в rax - количество прочитанных символов
+
+    dec  %rax
+    mov  %rax,  %r13
+
     echo newl
     xor %r9, %r9
     xor %r12, %r12 # EMPTY-ANCH_END_PROT_HOST_PORT_PATH_QUERY_ANCHOR
@@ -46,7 +55,8 @@ _start:
 
     mov $0, %dl         # state
     mov $example, %r8  # str
-    mov $lexample, %r10 # length
+    mov %r13, %r10 # length
+   
 lp:
     cmp $0, %r10
     je ex
@@ -138,7 +148,7 @@ cont_anch:
     jmp print_buf
     
 print_buf:
-    mov  $lexample, %rdx
+    mov  %r13, %rdx
     sub  %r10, %rdx
     sub  %r9, %rdx
 
@@ -168,7 +178,7 @@ clear_buf:
 
 save_ch_to_buf:
     pop %rax
-    mov $lexample, %rdx
+    mov %r13, %rdx
     sub  %r10, %rdx # cдвиг относительно начала строки
     sub  %r9, %rdx
     movb %al,   buffer(%rdx)
@@ -224,12 +234,6 @@ ex_it:
 
 cont_ex:
     echo newl
-    pop %rdx
-    mov  %dl,   %al
-    call num_to_str
-    movq $result, %rdi
-    append %rax %rbx
-    echo result 3
     exit
 
 .data
@@ -273,8 +277,9 @@ cont_ex:
     ls = (. - ss) / 8
     after: .word 0, 0, 0, 0
 
-    example: .ascii "bace://a.bc.def:012334/a/b/c/d/e/f#abcddf"
+    example: .ascii "                                                         "
     lexample = . - example
+    linput: .word 0
 
     result: .ascii "  \n"
 
