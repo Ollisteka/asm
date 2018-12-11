@@ -1,31 +1,6 @@
 .globl _start
 .include  "macro.s"
 
-.macro cell state, char, dest 
-    .ascii "\char"
-    .byte \state
-    .word 0xDEAD, 0x00, 0x00
-    .byte \dest, 0
-    .word 0xFFFF, 0xFFFF, 0xFFFF
-.endm
-
-.macro cycle_letters source, dest 
-    cell \source, "a", \dest
-    cell \source, "b", \dest
-    cell \source, "c", \dest
-    cell \source, "d", \dest
-    cell \source, "e", \dest
-    cell \source, "f", \dest
-.endm
-
-.macro cycle_numbers source, dest 
-    cell \source, 0, \dest
-    cell \source, 1, \dest
-    cell \source, 2, \dest
-    cell \source, 3, \dest
-    cell \source, 4, \dest
-.endm
-
 EMPTY_ANCHOR = 128
 END = 64
 PROTOCOL = 32
@@ -36,30 +11,25 @@ QUERY = 2
 ANCHOR = 1
 
 STACK_OFFSET = 16
-#  arg1  arg2  arg3  arg4  arg5  arg6  arg7
-#  rdi   rsi   rdx   r10   r8    r9    -
+
 .text
 _start:
-    mov		$0, 	%rax
-	mov		$0, 	%rdi
-    mov		$example, 	%rsi
-	mov		$lexample,	%rdx
-    syscall
-    # в rax - количество прочитанных символов
-
+    read $in_buffer, $lin_buffer # в rax - количество прочитанных символов, включая \n  
     dec  %rax
+
     mov %rsp, %rbp
     sub $STACK_OFFSET, %rsp
-    mov %rax, -8(%rbp)
+    mov %rax, -8(%rbp)  # длина прочитанного урла 
+    movq $out_buffer, -16(%rbp) # указатель на следующий символ out буфера
 
     echo newl
     xor %r9, %r9
-    xor %r12, %r12 # EMPTY-ANCH_END_PROT_HOST_PORT_PATH_QUERY_ANCHOR
+    xor %r12, %r12 # EMPTY-ANCH_END_PROT_HOST_PORT_PATH_QUERY_ANCHOR  - флаги, чтобы отслеживать, что уже прочитали
                    #     128    64  32    16   8    4    2      1
 
     mov $0, %dl         # state
-    mov $example, %r8  # str
-    mov -8(%rbp), %r10 # length
+    mov $in_buffer, %r8   # str
+    mov -8(%rbp), %r10  # length
    
 lp:
     cmp $0, %r10
@@ -85,7 +55,8 @@ lp:
 protocol_pr:
     jmp_if_bit_set PROTOCOL, save_ch_to_buf
 
-    echo protocol lprotocol
+    append_to_buf  $protocol, $lprotocol, -16(%rbp)
+
     or $PROTOCOL, %r12
     add  $2, %r9
     jmp print_buf
@@ -93,7 +64,8 @@ protocol_pr:
 host_pr:
     jmp_if_bit_set HOST, save_ch_to_buf
 
-    echo host lhost
+    append_to_buf  $host, $lhost, -16(%rbp)
+
     or $HOST, %r12
     jmp print_buf
 
@@ -106,7 +78,8 @@ port_pr:
 cont_port:
     jmp_if_bit_set PORT, save_ch_to_buf  # сюда возвращаемся, парся query
 
-    echo port lport
+    append_to_buf  $port, $lport, -16(%rbp)
+
     or $PORT, %r12
     jmp print_buf
 
@@ -119,7 +92,8 @@ path_pr:
 cont_path:
     jmp_if_bit_set PATH, save_ch_to_buf
 
-    echo path lpath
+    append_to_buf  $path, $lpath, -16(%rbp)
+
     or $PATH, %r12
     jmp print_buf
 
@@ -132,7 +106,8 @@ query_pr:
 cont_query:
     jmp_if_bit_set QUERY, save_ch_to_buf
 
-    echo query lquery
+    append_to_buf  $query, $lquery, -16(%rbp)
+
     or $QUERY, %r12
     jmp print_buf
 
@@ -147,7 +122,8 @@ anchor_pr:
 cont_anch:
     jmp_if_bit_set ANCHOR, save_ch_to_buf
 
-    echo anchor lanchor
+    append_to_buf  $anchor, $lanchor, -16(%rbp)
+
     or $ANCHOR, %r12
     jmp print_buf
     
@@ -164,10 +140,8 @@ print_buf:
     dec  %rdx
 
 cont_print:
-    mov $1,    %rax
-	mov $1,    %rdi
-	mov $buffer, %rsi
-	syscall
+    append_to_buf  $buffer, %rdx, -16(%rbp)
+    append_to_buf  $newl, $1, -16(%rbp)
     cmp  $0,    %r15
     jne ex_it
 
@@ -178,7 +152,6 @@ clear_buf:
     mov $buffer, %rdi
     mov $32, %al
     repnz stosb
-    echo newl
 
 save_ch_to_buf:
     pop %rax
@@ -191,7 +164,6 @@ save_ch_to_buf:
     mov $ss, %rdi
     repnz scasq # rdi -> offset-part
 
-b:
     cmp $after, %rdi
     je fail
 
@@ -200,6 +172,7 @@ b:
     dec %r10
 
     jmp lp
+
 ex:
     push %rdx
     or $END, %r12
@@ -221,23 +194,19 @@ ex:
     je anchor_pr
 
 fail:
-    cls
     echo invalid linvalid
     exit
-
-print:
-    echo buffer lbuffer
 
 ex_it:
     mov  $EMPTY_ANCHOR, %r15
     and  %r12,   %r15
     cmp  $0,    %r15
     je cont_ex
-    echo newl
-    echo   anchor lemptyanchor
+    append_to_buf  $anchor, $lemptyanchor, -16(%rbp)
+    append_to_buf  $newl, $1, -16(%rbp)
 
 cont_ex:
-    echo newl
+    echo out_buffer lout_buffer
     exit
 
 .data
@@ -281,16 +250,15 @@ cont_ex:
     ls = (. - ss) / 8
     after: .word 0, 0, 0, 0
 
-    example: .skip 50
-    lexample = . - example
-    linput: .word 0
+    in_buffer: .skip 50
+    lin_buffer = . - in_buffer
 
     result: .ascii "  \n"
 
     invalid: .ascii "INVALID_URL\n"
     linvalid = . - invalid
 
-    buffer:	 .ascii	"                            \n" 
+    buffer:	 .skip 20
     lbuffer =  . - buffer
 
     protocol: .ascii "Protocol: "

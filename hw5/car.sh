@@ -4,6 +4,7 @@ if [ "$1" = "--help" ]; then
 	echo 'Compile and run your assembler code!'
 else 
 	as $1.s -o $1.o
-	ld $1.o num_to_str.o -o $1  
+	as copy_str.s -o copy_str.o
+	ld $1.o copy_str.o -o $1  
 	./$1
 fi

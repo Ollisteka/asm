@@ -1,36 +1,11 @@
 .nolist
 
-.data
-	clear:  .ascii "\x1B[H\x1B[J"
-	lclear = . - clear
-
-.macro  read_char reg buff
-    mov		$0, 	    %rax
-	mov		\reg,   	%rdi
-    mov		$\buff, 	%rsi
-	mov		$1,	        %rdx
-    syscall # кол-во прочитанных символов -> rax
-.endm
-
-.macro  open fname flag
-    mov     \fname,  %rdi
-    mov     \flag,   %rsi
-    mov     $2,      %rax
-    syscall # fd -> rax
-.endm
-
-.macro	close  fd
-	mov     \fd, 	%rdi
-    mov 	$3,     %rax
-	syscall
-.endm
-
-.macro  print  fd str len=1
-	mov 		$1,    %rax
-	mov 		\fd,  %rdi
-	mov 		$\str, %rsi
-	mov 		$\len, %rdx
-	syscall
+.macro read buf, lbuf
+    mov		$0, 	%rax
+	mov		$0, 	%rdi
+    mov		\buf, 	%rsi
+	mov		\lbuf,	%rdx
+    syscall
 .endm
 
 .macro  echo   str len=1
@@ -41,47 +16,9 @@
 	syscall
 .endm
 
-.macro  append   str len=$1
-    mov     \str,   %rsi
-    mov     \len, %rcx
-    rep movsb
-.endm
-
-.macro  get_half_of  func
-    call    \func
-    shr     %rax
-    call    num_to_str
-.endm
-
-.macro cls
-	echo clear lclear
-.endm
-
-.macro hide_cursor
-	.data
-		hide_cursor: .ascii "\x1B[?25l"
-    	lhide_cursor = . - hide_cursor
-	.text
-		echo hide_cursor lhide_cursor
-.endm
-
-.macro show_cursor
-	.data
-		show_cursor: .ascii  "\x1B[?25h"
-    	lshow_cursor = . - show_cursor
-	.text
-		echo show_cursor lshow_cursor
-.endm
-
 .macro exit
 	mov $60,    %rax
     syscall
-.endm
-
-.macro is_bit_not_set mask, flag_reg=%r12
-	mov  $\mask, 	   %r15
-    and  \flag_reg,   %r15
-    cmp  $0,    	   %r15 # == true, когда бит не установлен
 .endm
 
 .macro jmp_if_bit_set mask, label, flag_reg=%r12
@@ -89,4 +26,37 @@
     and  \flag_reg,   %r15
     cmp  $0,    	   %r15
 	jne  \label # прыгнем, если бит установлен
+.endm
+
+.macro append_to_buf source, lsource, buffer
+	mov \buffer, %rdi    
+    mov \source, %rsi
+	mov \lsource, %rcx
+	call copy_str
+    mov %rax, \buffer
+.endm
+
+.macro cell state, char, dest 
+    .ascii "\char"
+    .byte \state
+    .word 0xDEAD, 0x00, 0x00
+    .byte \dest, 0
+    .word 0xFFFF, 0xFFFF, 0xFFFF
+.endm
+
+.macro cycle_letters source, dest 
+    cell \source, "a", \dest
+    cell \source, "b", \dest
+    cell \source, "c", \dest
+    cell \source, "d", \dest
+    cell \source, "e", \dest
+    cell \source, "f", \dest
+.endm
+
+.macro cycle_numbers source, dest 
+    cell \source, 0, \dest
+    cell \source, 1, \dest
+    cell \source, 2, \dest
+    cell \source, 3, \dest
+    cell \source, 4, \dest
 .endm
