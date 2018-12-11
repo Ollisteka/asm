@@ -48,7 +48,7 @@ RADIX    = 10
         jmp     exit
 
     error:
-        print $SYS_OUT error_text err_len
+        echo error_text err_len
 
     exit:
         ret
