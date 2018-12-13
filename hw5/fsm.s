@@ -232,19 +232,26 @@ cont_ex:
         cell 9, "/", 10
         cell 9, "?", 12
         cell 9, "#", 15
-    s10: cycle_letters 10, 11  # 6 
-    s11: cycle_letters 11, 11  # 6 
+    s10: cycle_letters 10, 11
+         cycle_numbers 10, 11
+    s11: cycle_letters 11, 11
+         cycle_numbers 11, 11
          cell 11, "/", 10
          cell 11, "?", 12
          cell 11, "#", 15
     s12: cycle_letters 12, 13  # 6
+         cycle_numbers 12, 13
     s13: cell 13, "&", 12
          cycle_letters 13, 13  # 6
+         cycle_numbers 13, 13
          cell 13, "=", 14
+         cell 13, "#", 15
     s14: cycle_letters 14, 14  # 6
+         cycle_numbers 14, 14
          cell 14, "&", 12
          cell 14, "#", 15
-    s15: cycle_letters 15, 15  # 6
+    s15: cycle_letters 15, 15
+         cycle_numbers 15, 15
 
     # ls = 206 # (12*6 + 5*2 + 20) * 2 
     ls = (. - ss) / 8
