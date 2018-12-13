@@ -54,9 +54,13 @@
 .endm
 
 .macro cycle_numbers source, dest 
-    cell \source, 0, \dest
     cell \source, 1, \dest
     cell \source, 2, \dest
     cell \source, 3, \dest
     cell \source, 4, \dest
+    cell \source, 5, \dest
+    cell \source, 6, \dest
+    cell \source, 7, \dest
+    cell \source, 8, \dest
+    cell \source, 9, \dest
 .endm
