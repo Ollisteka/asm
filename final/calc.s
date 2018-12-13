@@ -1,10 +1,10 @@
 .globl	_start
 .include "macro.s"
 
-STACK_OFFSET = 64
+STACK_OFFSET = 16
 DEC_BASE = 10
-SPACE = 32
-NEWL = 0xa
+SPACE    = 32
+NEWL     = 10
 MULT 	 = 42
 PLUS     = 43
 MINUS 	 = 45
@@ -42,7 +42,6 @@ skip_space:
     inc %r8
     dec %r10
     jmp skip_space
-    
 
 cont:
     cmp $0, %r10
@@ -89,29 +88,8 @@ cont:
     jmp fail
 
 parse_dec_num:
-    xor %rax, %rax
-    xor %rbx, %rbx
-    xor %rcx, %rcx
-    mov $RADIX, %bx
+    call dec_str_to_num
 
-p_start_lp:
-    cmp  $0, %r10
-    je p_end_lp
-
-    movb (%r8), %cl
-    cmp  $SPACE, %cl
-    je p_end_lp
-    
-    sub     $0x30,  %cl
-    mul     %rbx  # ax = ax*cx 
-
-    add     %rcx,    %rax  # rax = rax*10 + cx 
-
-    inc     %r8
-    dec     %r10
-    jmp     p_start_lp
-
-p_end_lp:
     push %rax
     mov -8(%rbp), %rax
     inc %rax
@@ -158,12 +136,12 @@ ex:
     cmp $1, %rbx # остался 1 элемент в стеке - ответ.
     je  success
 
-fail_div_by_zero:
-    echo div_by_zero ldiv_by_zero
-    exit
-
 fail_stack_not_emty:
     echo stack_not_emty lstack_not_emty
+    exit
+    
+fail_div_by_zero:
+    echo div_by_zero ldiv_by_zero
     exit
 
 fail_too_few_args:
@@ -172,8 +150,10 @@ fail_too_few_args:
 
 fail_unsupported_operator:
     echo unsupported_operand, lunsupported_operand
+    exit
 
 fail:
+    echo unknown_error lunknown_error
     exit
 
 success:
@@ -182,11 +162,6 @@ success:
     exit
 
 .data
-    example: .ascii "1"
-    lexample = . - example
-
-    result: .ascii "Fail\n"
-
     in_buffer: .skip 50
     lin_buffer = . - in_buffer
 
@@ -201,9 +176,11 @@ success:
     unsupported_operand: .ascii "Непооддерживаемый оператор\n"
     lunsupported_operand = . - unsupported_operand
 
-    stack_not_emty: .ascii "Не хватает операторов, чтобы завершить вычисления\n"
+    stack_not_emty: .ascii "В стеке лежит больше одного числа. Добавьте операторов!\n"
     lstack_not_emty = . - stack_not_emty
 
     div_by_zero: .ascii "Нельзя делить на ноль\n"
     ldiv_by_zero = . - div_by_zero
 
+    unknown_error: .ascii "Что-то пошло не так :(\n"
+    lunknown_error = . - unknown_error
