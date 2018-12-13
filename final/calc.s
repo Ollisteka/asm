@@ -12,6 +12,11 @@ MINUS 	 = 45
 DIVIDE 	 = 47
 UNAR_MINUS = 126
 RADIX    = 10
+AND_ST   = 97
+OR_ST    = 111
+XOR_ST   = 120
+MODULO   = 124
+SGN      = 60
 
 .text
 _start:
@@ -87,6 +92,21 @@ cont:
     exec_bin_operation remainder_op
 
 1:
+    cmp $AND_ST, %al
+    jne 1f
+    exec_bin_operation and_op
+
+1:
+    cmp $OR_ST, %al
+    jne 1f
+    exec_bin_operation or_op
+
+1:
+    cmp $XOR_ST, %al
+    jne 1f
+    exec_bin_operation xor_op
+
+1:
     cmp $UNAR_MINUS, %al
     je unar_min_op
 
@@ -127,6 +147,24 @@ div_op:
 remainder_op:
     call div_op
     mov  %rdx, %rax
+    ret
+
+and_op:
+    add $2, %r8
+    sub $2, %r10
+    and %rbx, %rax
+    ret
+
+or_op:
+    dec %r10
+    inc  %r8
+    or %rbx, %rax
+    ret
+
+xor_op:
+    add $2, %r8
+    sub $2, %r10
+    xor %rbx, %rax
     ret
 
 unar_min_op:
@@ -184,7 +222,7 @@ success:
     wrong_symbol: .ascii "Неправильный символ во входной строке\n"
     lwrong_symbol = . - wrong_symbol
 
-    unsupported_operand: .ascii "Непооддерживаемый оператор\n"
+    unsupported_operand: .ascii "Неподдерживаемый оператор\n"
     lunsupported_operand = . - unsupported_operand
 
     stack_not_emty: .ascii "В стеке лежит больше одного числа. Добавьте операторов!\n"
