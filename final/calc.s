@@ -55,6 +55,12 @@ cont:
     cmp $0, %rax
     je parse_dec_num
 
+    push %r10
+    call is_operator
+    pop %r10
+    cmp $0, %rax
+    jne fail_unsupported_operator
+
     movb (%r8), %al
     cmp $PLUS, %al
     jne 1f
@@ -64,6 +70,16 @@ cont:
     cmp $MINUS, %al
     jne 1f
     exec_bin_operation minus_op
+
+1:
+    cmp $MULT, %al
+    jne 1f
+    exec_bin_operation mult_op
+
+1:
+    cmp $DIVIDE, %al
+    jne 1f
+    exec_bin_operation div_op
 
 1:
     cmp $UNAR_MINUS, %al
@@ -111,6 +127,17 @@ minus_op:
     xchg %rax, %rbx
     ret
 
+mult_op:
+    imul %rbx, %rax
+    ret
+
+div_op:
+    xchg %rax, %rbx
+    xor   %rdx, %rdx
+	cqo
+	idiv	%rbx
+    ret
+
 unar_min_op:
     dec %r10
     inc  %r8
@@ -129,8 +156,16 @@ ex:
     cmp $1, %rbx # остался 1 элемент в стеке - ответ.
     je  success
 
+fail_stack_not_emty:
+    echo stack_not_emty lstack_not_emty
+    exit
+
 fail_too_few_args:
     echo too_few_ops, ltoo_few
+    exit
+
+fail_unsupported_operator:
+    echo unsupported_operand, lunsupported_operand
 
 fail:
     exit
@@ -156,4 +191,10 @@ success:
 
     wrong_symbol: .ascii "Неправильный символ во входной строке\n"
     lwrong_symbol = . - wrong_symbol
+
+    unsupported_operand: .ascii "Непооддерживаемый оператор\n"
+    lunsupported_operand = . - unsupported_operand
+
+    stack_not_emty: .ascii "Не хватает операторов, чтобы завершить вычисления\n"
+    lstack_not_emty = . - stack_not_emty
 

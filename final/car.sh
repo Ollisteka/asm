@@ -6,6 +6,7 @@ else
 	as $1.s -o $1.o
 	as numprint.s -o numprint.o
 	as is_dec_number.s -o is_dec_number.o
-	ld $1.o numprint.o is_dec_number.o -o  $1  
+	as is_operator.s -o is_operator.o
+	ld $1.o numprint.o is_dec_number.o is_operator.o -o  $1  
 	./$1
 fi
