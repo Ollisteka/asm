@@ -66,16 +66,45 @@
 .endm
 
 .macro exec_bin_operation func
-    dec %r10
-    inc %r8
-    mov -24(%rbp), %rax
+    dec %r10 # оставшаяся длина
+    inc %r8  # указатель на строку
+    mov -8(%rbp), %rax
     cmp $2, %rax
     jb  fail_too_few_args
     dec %rax
-    mov %rax, -24(%rbp)
+    mov %rax, -8(%rbp)
     pop %rax
     pop %rbx
     call \func
     push %rax
     jmp lp
+.endm
+
+
+.macro run_fsm table, ltable
+        mov $0, %dl         # state
+
+    lp:
+        cmp $0, %r10
+        je success
+
+        mov $0xDEADDEAD, %eax
+        mov %dl, %ah
+        movb (%rsi), %al
+
+        cmp $0x20, %al # прочитали число до пробела
+        je success
+
+        mov $\ltable, %rcx
+        mov $\table, %rdi
+        repnz scasq     # rdi -> offset-part
+
+        cmp $after, %rdi
+        je fail
+
+        movb (%rdi), %dl
+        inc %rsi
+        dec %r10
+
+        jmp lp
 .endm

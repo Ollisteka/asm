@@ -15,20 +15,17 @@ RADIX    = 10
 .text
 _start:
     read $in_buffer, $lin_buffer # в rax - количество прочитанных символов, включая \n  
-    dec  %rax
+    dec %rax
+    mov %rax, %r10    # длина входной строки (без перевода строки)
 
     mov %rsp, %rbp
     sub $STACK_OFFSET, %rsp
-    mov %rax, -8(%rbp)   # длина прочитанного выражения
-    movq $0, -16(%rbp)  # что считали: 0 - оператор, 1 - десятичное число, 2 - hex
-    movq $0, -24(%rbp)  # текущий размер стека
-    movq $0, -32(%rbp)  # сюда буду ложить распарсенную циферку
-    movq $0, -40(%rbp)  # здесь сохраню число-переход
+    movq $0, -8(%rbp)  # текущий размер стека
 
     echo newl
 
     mov $in_buffer, %r8   # str
-    mov -8(%rbp), %r10    # length
+    
 
 lp:
     cmp $0, %r10
@@ -48,6 +45,9 @@ skip_space:
     
 
 cont:
+    cmp $0, %r10
+    je ex
+
     mov %r8, %rsi
     push %r10
     call is_dec_number
@@ -113,9 +113,9 @@ p_start_lp:
 
 p_end_lp:
     push %rax
-    mov -24(%rbp), %rax
+    mov -8(%rbp), %rax
     inc %rax
-    mov %rax, -24(%rbp)
+    mov %rax, -8(%rbp)
     jmp lp
 
 plus_op:
@@ -135,13 +135,15 @@ div_op:
     xchg %rax, %rbx
     xor   %rdx, %rdx
 	cqo
+    cmp $0, %rbx
+    je  fail_div_by_zero
 	idiv	%rbx
     ret
 
 unar_min_op:
     dec %r10
     inc  %r8
-    mov -24(%rbp), %rax
+    mov -8(%rbp), %rax
     cmp $0, %rax
     je  fail_too_few_args
     pop %rax
@@ -152,9 +154,13 @@ unar_min_op:
 
 
 ex:
-    mov -24(%rbp), %rbx
+    mov -8(%rbp), %rbx
     cmp $1, %rbx # остался 1 элемент в стеке - ответ.
     je  success
+
+fail_div_by_zero:
+    echo div_by_zero ldiv_by_zero
+    exit
 
 fail_stack_not_emty:
     echo stack_not_emty lstack_not_emty
@@ -197,4 +203,7 @@ success:
 
     stack_not_emty: .ascii "Не хватает операторов, чтобы завершить вычисления\n"
     lstack_not_emty = . - stack_not_emty
+
+    div_by_zero: .ascii "Нельзя делить на ноль\n"
+    ldiv_by_zero = . - div_by_zero
 
