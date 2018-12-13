@@ -94,22 +94,34 @@ cont:
 1:
     cmp $AND_ST, %al
     jne 1f
-    exec_bin_operation and_op
+    exec_bin_operation and_op, 3
 
 1:
     cmp $OR_ST, %al
     jne 1f
-    exec_bin_operation or_op
+    exec_bin_operation or_op, 2
 
 1:
     cmp $XOR_ST, %al
     jne 1f
-    exec_bin_operation xor_op
+    exec_bin_operation xor_op, 3
 
 1:
     cmp $UNAR_MINUS, %al
-    je unar_min_op
+    jne 1f
+    exec_unar_operation unar_min_op
 
+1:
+    cmp $MODULO, %al
+    jne 1f
+    exec_unar_operation modulo_op, 2
+
+1:
+    cmp $SGN, %al
+    jne 1f
+    exec_unar_operation sgn_op, 2
+
+1:
     echo wrong_symbol lwrong_symbol
     jmp fail
 
@@ -150,34 +162,46 @@ remainder_op:
     ret
 
 and_op:
-    add $2, %r8
-    sub $2, %r10
     and %rbx, %rax
     ret
 
 or_op:
-    dec %r10
-    inc  %r8
     or %rbx, %rax
     ret
 
 xor_op:
-    add $2, %r8
-    sub $2, %r10
     xor %rbx, %rax
     ret
 
 unar_min_op:
-    dec %r10
-    inc  %r8
-    mov -8(%rbp), %rax
-    cmp $0, %rax
-    je  fail_too_few_args
-    pop %rax
     mov $0,  %rbx
     sub %rax, %rbx
-    push %rbx
-    jmp lp
+    mov %rbx, %rax
+    ret
+
+modulo_op:
+    cmp $0, %rax
+	jl mod_negative
+    ret
+
+    mod_negative:
+        call unar_min_op
+        ret
+
+sgn_op:
+    cmp $0, %rax
+	jl sgn_negative
+    cmp $0, %rax
+	jg sgn_positive
+    ret
+
+    sgn_negative:
+        mov $-1, %rax
+        ret
+
+    sgn_positive:
+        mov $1, %rax
+        ret
 
 
 ex:

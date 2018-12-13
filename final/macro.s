@@ -65,21 +65,36 @@
     cell \source, 9, \dest
 .endm
 
-.macro exec_bin_operation func
-    dec %r10 # оставшаяся длина
-    inc %r8  # указатель на строку
+.macro start_exec operator_len, operands_number
+    sub $\operator_len, %r10 # оставшаяся длина
+    add $\operator_len, %r8  # указатель на строку
     mov -8(%rbp), %rax
-    cmp $2, %rax
+    cmp $\operands_number, %rax
     jb  fail_too_few_args
+.endm
+
+.macro exec_bin_operation func, operator_len=1
+    start_exec \operator_len, 2
     dec %rax
     mov %rax, -8(%rbp)
     pop %rax
     pop %rbx
+    call_and_end_exec \func
+.endm
+
+.macro exec_unar_operation func, operator_len=1
+    start_exec \operator_len, 1
+    pop %rax
+    call_and_end_exec \func
+.endm
+
+
+.macro call_and_end_exec func
     call \func
+
     push %rax
     jmp lp
 .endm
-
 
 .macro run_fsm table, ltable
         mov $0, %dl         # state
