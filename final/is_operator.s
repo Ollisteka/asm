@@ -26,5 +26,6 @@ success:
         cell 0, "-", 3
         cell 0, "/", 4
         cell 0, "~", 5
+        cell 0, "%", 6
     ls = (. - ss) / 8
     after: .word 0, 0, 0, 0

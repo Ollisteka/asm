@@ -5,6 +5,7 @@ STACK_OFFSET = 16
 DEC_BASE = 10
 SPACE    = 32
 NEWL     = 10
+REMAINDR = 37
 MULT 	 = 42
 PLUS     = 43
 MINUS 	 = 45
@@ -81,6 +82,11 @@ cont:
     exec_bin_operation div_op
 
 1:
+    cmp $REMAINDR, %al
+    jne 1f
+    exec_bin_operation remainder_op
+
+1:
     cmp $UNAR_MINUS, %al
     je unar_min_op
 
@@ -116,6 +122,11 @@ div_op:
     cmp $0, %rbx
     je  fail_div_by_zero
 	idiv	%rbx
+    ret
+
+remainder_op:
+    call div_op
+    mov  %rdx, %rax
     ret
 
 unar_min_op:
