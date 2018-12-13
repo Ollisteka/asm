@@ -27,6 +27,7 @@ success:
         cell 0, "/", 4
         cell 0, "~", 5
         cell 0, "%", 6
+        cell 0, "^", 17
     and:  cell 0, "a", 7
           cell 7, "n", 8
           cell 8, "d", 9

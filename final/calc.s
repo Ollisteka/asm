@@ -17,6 +17,7 @@ OR_ST    = 111
 XOR_ST   = 120
 MODULO   = 124
 SGN      = 60
+POWER    = 94
 
 .text
 _start:
@@ -122,6 +123,11 @@ cont:
     exec_unar_operation sgn_op, 2
 
 1:
+    cmp $POWER, %al
+    jne 1f
+    exec_bin_operation power_op
+
+1:
     echo wrong_symbol lwrong_symbol
     jmp fail
 
@@ -201,6 +207,20 @@ sgn_op:
 
     sgn_positive:
         mov $1, %rax
+        ret
+
+power_op:
+    xchg %rbx, %rax
+    dec %rbx
+    mov %rax, %rcx
+    power_lp:
+        cmp $0, %rbx
+        je power_ex
+        imul %rcx, %rax
+        dec %rbx
+        jmp power_lp
+
+    power_ex:
         ret
 
 
