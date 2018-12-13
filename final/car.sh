@@ -5,6 +5,7 @@ if [ "$1" = "--help" ]; then
 else 
 	as $1.s -o $1.o
 	as numprint.s -o numprint.o
-	ld $1.o numprint.o -o $1  
+	as is_dec_number.s -o is_dec_number.o
+	ld $1.o numprint.o is_dec_number.o -o  $1  
 	./$1
 fi

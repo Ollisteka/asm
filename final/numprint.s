@@ -3,6 +3,7 @@
 
 NUM  		= 15
 BASE        = 10
+MINUS       = 45
 
 .data
     buffer:	  .skip  32
@@ -13,9 +14,20 @@ BASE        = 10
 print_num:
     # args:
     # $NUM,   %rax    
+    movq    $buffer,    %rdi
     movq    $BASE,  %rcx
     xor     %rbx,   %rbx
     xor	    %rdx,	%rdx
+
+    cmp $0, %rax
+	jge divide_loop
+
+    neg %rax
+
+    push %rax
+    mov $MINUS, %al
+	stosb
+    pop %rax
 
 divide_loop:
 # rax = rax / rcx
@@ -27,7 +39,6 @@ divide_loop:
     cmp     $0,     %rax
     jne     divide_loop
 
-    movq    $buffer,    %rdi
 
 fill_buffer:
     popq    %rax    

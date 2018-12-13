@@ -64,3 +64,18 @@
     cell \source, 8, \dest
     cell \source, 9, \dest
 .endm
+
+.macro exec_bin_operation func
+    dec %r10
+    inc %r8
+    mov -24(%rbp), %rax
+    cmp $2, %rax
+    jb  fail_too_few_args
+    dec %rax
+    mov %rax, -24(%rbp)
+    pop %rax
+    pop %rbx
+    call \func
+    push %rax
+    jmp lp
+.endm
