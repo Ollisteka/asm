@@ -154,3 +154,81 @@
             mov $\digit, %cl
             jmp mult
 .endm
+
+.macro raise_error error_msg, error_msg_len
+    echo \error_msg, \error_msg_len
+    exit
+.endm
+
+REMAINDR = 37
+MULT 	 = 42
+PLUS     = 43
+MINUS 	 = 45
+DIVIDE 	 = 47
+SGN      = 60
+POWER    = 94
+AND_ST   = 97
+OR_ST    = 111
+XOR_ST   = 120
+MODULO   = 124
+UNAR_MINUS = 126
+
+.macro operator_switch
+        cmp $PLUS, %al
+        jne 1f
+        exec_bin_operation plus_op
+    1:
+        cmp $MINUS, %al
+        jne 1f
+        exec_bin_operation minus_op
+
+    1:
+        cmp $MULT, %al
+        jne 1f
+        exec_bin_operation mult_op
+
+    1:
+        cmp $DIVIDE, %al
+        jne 1f
+        exec_bin_operation div_op
+
+    1:
+        cmp $REMAINDR, %al
+        jne 1f
+        exec_bin_operation remainder_op
+
+    1:
+        cmp $AND_ST, %al
+        jne 1f
+        exec_bin_operation and_op, 3
+
+    1:
+        cmp $OR_ST, %al
+        jne 1f
+        exec_bin_operation or_op, 2
+
+    1:
+        cmp $XOR_ST, %al
+        jne 1f
+        exec_bin_operation xor_op, 3
+
+    1:
+        cmp $UNAR_MINUS, %al
+        jne 1f
+        exec_unar_operation unar_min_op
+
+    1:
+        cmp $MODULO, %al
+        jne 1f
+        exec_unar_operation modulo_op, 2
+
+    1:
+        cmp $SGN, %al
+        jne 1f
+        exec_unar_operation sgn_op, 2
+
+    1:
+        cmp $POWER, %al
+        jne 1f
+        exec_bin_operation power_op
+.endm
