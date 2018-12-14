@@ -68,6 +68,7 @@ cont:
     jne fail_unsupported_operator
 
     movb (%r8), %al
+
     cmp $PLUS, %al
     jne 1f
     exec_bin_operation plus_op
@@ -150,8 +151,15 @@ minus_op:
     ret
 
 mult_op:
-    imul %rbx, %rax
-    ret
+    imul %rbx, %rax     # по документации: если результат > 64 бит, выставятся CF и OF
+    jnc mult_ret
+    pushf
+    pop %rbx
+    shr  $1, %rbx
+    jnc  mult_ret
+    echo overflow_warning, loverflow_warning
+    mult_ret:
+        ret
 
 div_op:
     xchg %rax, %rbx
@@ -255,7 +263,7 @@ success:
     exit
 
 .data
-    in_buffer: .skip 50
+    in_buffer: .skip 150
     lin_buffer = . - in_buffer
 
     newl: .ascii "\n"
@@ -277,3 +285,6 @@ success:
 
     unknown_error: .ascii "Что-то пошло не так :(\n"
     lunknown_error = . - unknown_error
+
+    overflow_warning: .ascii "Множители получились слишком большие. Часть результата потерялась :(\n\n"
+    loverflow_warning = . - overflow_warning
