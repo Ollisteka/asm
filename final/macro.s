@@ -21,21 +21,6 @@
     syscall
 .endm
 
-.macro jmp_if_bit_set mask, label, flag_reg=%r12
-	mov  $\mask, 	   %r15
-    and  \flag_reg,   %r15
-    cmp  $0,    	   %r15
-	jne  \label # прыгнем, если бит установлен
-.endm
-
-.macro append_to_buf source, lsource, buffer
-	mov \buffer, %rdi    
-    mov \source, %rsi
-	mov \lsource, %rcx
-	call copy_str
-    mov %rax, \buffer
-.endm
-
 .macro cell state, char, dest 
     .ascii "\char"
     .byte \state
