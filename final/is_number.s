@@ -1,4 +1,4 @@
-.globl	is_dec_number
+.globl	is_number
 .include "macro.s"
 
 # args:
@@ -8,7 +8,7 @@
 # returns:
 # rax: 0 - десятичное число, 1 - hex, 2 - не число
 .text
-is_dec_number:
+is_number:
    run_fsm ss, ls
 
 fail:

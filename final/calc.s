@@ -56,7 +56,7 @@ cont:
 
     mov %r8, %rsi
     push %r10
-    call is_dec_number
+    call is_number
     pop %r10
     cmp $0, %rax
     je parse_dec_num
