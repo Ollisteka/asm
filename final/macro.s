@@ -123,3 +123,34 @@
 
         jmp lp
 .endm
+
+.macro cycle_hex_symbols source, dest
+    cell \source, 0, \dest
+    cycle_numbers \source, \dest
+    cell \source, "a", \dest
+    cell \source, "A", \dest
+    cell \source, "b", \dest
+    cell \source, "B", \dest
+    cell \source, "c", \dest
+    cell \source, "C", \dest
+    cell \source, "d", \dest
+    cell \source, "D", \dest
+    cell \source, "e", \dest
+    cell \source, "E", \dest
+    cell \source, "f", \dest
+    cell \source, "F", \dest
+.endm
+
+.macro find_hex_let big_let, little_let, digit
+        1:
+            cmp $\big_let, %cl
+            jne 1f
+            mov $\digit, %cl
+            jmp mult
+
+        1:
+            cmp $\little_let, %cl
+            jne 1f
+            mov $\digit, %cl
+            jmp mult
+.endm

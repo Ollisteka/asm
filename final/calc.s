@@ -61,6 +61,9 @@ cont:
     cmp $0, %rax
     je parse_dec_num
 
+    cmp $1, %rax
+    je parse_hex_num
+
     push %r10
     call is_operator
     pop %r10
@@ -134,7 +137,15 @@ cont:
 
 parse_dec_num:
     call dec_str_to_num
+    jmp save_parsed_num
 
+parse_hex_num:
+    add $2, %r8
+    sub $2, %r10
+
+    call hex_str_to_num
+
+save_parsed_num:
     push %rax
     mov -8(%rbp), %rax
     inc %rax
