@@ -152,14 +152,8 @@ minus_op:
 
 mult_op:
     imul %rbx, %rax     # по документации: если результат > 64 бит, выставятся CF и OF
-    jnc mult_ret
-    pushf
-    pop %rbx
-    shr  $1, %rbx
-    jnc  mult_ret
-    echo overflow_warning, loverflow_warning
-    mult_ret:
-        ret
+    call check_mult_overflow   
+    ret
 
 div_op:
     xchg %rax, %rbx
@@ -225,12 +219,30 @@ power_op:
         cmp $0, %rbx
         je power_ex
         imul %rcx, %rax
+        call check_mult_overflow
+        cmp $0, %rdx
+        jne power_ex
         dec %rbx
         jmp power_lp
 
     power_ex:
         ret
 
+check_mult_overflow:
+    jnc ok
+
+    pushf
+    pop %rdx
+    shr  $1, %rdx
+    jnc  ok
+
+    echo overflow_warning, loverflow_warning
+    mov $1, %rdx
+    ret
+
+    ok:
+        xor %rdx, %rdx
+        ret
 
 ex:
     mov -8(%rbp), %rbx
