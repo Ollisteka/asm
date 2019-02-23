@@ -1,3 +1,7 @@
 DOS
 peda-session*
 .gdb*
+*.COM
+*.MAP
+*.LST
+*.OBJ
