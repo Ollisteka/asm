@@ -3,7 +3,7 @@ if "%1" == "" goto :empty
 if "%1" == "/?" goto :help
 
 if not exist %1.asm goto :error
-tasm /l /t  %1.asm
+tasm /l /t /m  %1.asm
 
 if not exist %1.obj goto :errorobj
 tlink /t %1.obj

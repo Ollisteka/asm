@@ -4,6 +4,14 @@ EXIT 		= 4Ch
 STDOUT 		= 1
 SYSCALL 	= 21h
 
+jmp main
+
+call_get_vector macro intrpt
+	mov ah, GIVE_VECTOR
+	mov al, intrpt
+	int SYSCALL ;ES:BX -> current interrupt handler
+endm
+
 call_print macro buffer
 	mov		ah,   PRINT_STR
 	mov  	dx,	  offset buffer
@@ -38,6 +46,14 @@ call_exit macro
     int SYSCALL
 endm
 
-call_skip_spaces macro
-	
+call_check_installed macro
+	call_multiplex RSD_NUM, RSD_NUM_STATUS
+	cmp al, RSD_INSTALLED
+	je .installed_already
+endm
+
+call_multiplex macro num, func
+	mov ah, num
+	mov al, func
+	int MULTIPLEX
 endm
