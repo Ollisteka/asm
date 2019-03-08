@@ -2,6 +2,7 @@ PRINT_STR	= 09h
 WRITE 		= 40h ;bx - file handler, cx - length, dx - buffer. ax - len\error
 EXIT 		= 4Ch
 STDOUT 		= 1
+GIVE_VECTOR = 35h
 SYSCALL 	= 21h
 
 jmp main
@@ -44,16 +45,4 @@ endm
 call_exit macro
 	mov ah, EXIT
     int SYSCALL
-endm
-
-call_check_installed macro
-	call_multiplex RSD_NUM, RSD_NUM_STATUS
-	cmp al, RSD_INSTALLED
-	je .installed_already
-endm
-
-call_multiplex macro num, func
-	mov ah, num
-	mov al, func
-	int MULTIPLEX
 endm

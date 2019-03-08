@@ -1,12 +1,7 @@
 jmp main
 
 MULTIPLEX = 2Fh
-RSD_NUM_STATUS = 0
-MIN_NUM = 0C0h
-MAX_NUM = 0FFh
-NUM_FREE = 0
 RSD_INSTALLED = 0FFh
-GIVE_VECTOR = 35h
 SET_VECTOR  = 25h
 
 skip_spaces:
@@ -63,26 +58,6 @@ print_newl:
 	int 29h
 	mov al, 0Ah
 	int 29h
-	ret
-	
-		
-find_free_rsd_num: ;ch != 0 => NUM
-	xor ax, ax
-	xor cx, cx
-	mov ch, MIN_NUM
-	.loop:
-		cmp ch, 0 ; overflow -> error
-		je .ex_
-		mov ah, ch
-		mov al, RSD_NUM_STATUS
-		push cx
-		int MULTIPLEX
-		pop cx
-		cmp al, NUM_FREE
-		je .ex_
-		inc ch
-		jmp .loop
-	.ex_:
 	ret
 	
 reg_to_str: ;->AX

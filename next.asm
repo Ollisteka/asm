@@ -9,52 +9,45 @@ include macro.asm
 include procs.asm
 
 error_msg   	db "Some error with args. Check help (/?)", "$"
-alr_inst_msg   	db "Program is already resident", "$"
-help_msg    	db "This programm creates resident, using one of the ways:", 0Dh, 0Ah, "$"
-help_int_msg    db "/i - TSR, using 27h DOS interrupt", 0Dh, 0Ah, "$"
-help_func_msg   db "/f - TSR, using 31h function of 21h DOS interrupt", 0Dh, 0Ah, "$"
-buffer			db 8 dup(0)
+alr_inst_msg   	db "Program is already resident and cannot be reinstalled", "$"
+help_msg    	db "This programm installs and uninstalls (if possible) resident program.", 0Dh, 0Ah, "Resident is hooked to INT 2F.", 0Dh, 0Ah, "$"
+help_instl_msg  db "/i - install (if not already), using INT 21 -> 31f;", 0Dh, 0Ah, "$"
+help_help_msg   db "/? - this help.", 0Dh, 0Ah, "$"
 output			db 4 dup(0), '$'
 SPACE    = 20h
 QUESTION = 3Fh
 SLASH    = 2Fh
-FUNC     = 66h
-INTRPT   = 69h
-TSR_INT  = 27h ; CS - PSP segment, DX: address at which mext program can be loaded
+INSTL    = 69h
 TSR_FUNC = 31h
-RSD_NUM  = 0c0h
 SEMICOLON = 3Ah
-
+SGNT_CHK = 0c0h
+SIGNATURE = 0ABCDh
 
 main:
 	jmp init
+
 	old_vector		db 2 dup(?)
 	old_2fh 		dd ?
-	nop ;90
 	has_run 		db 0
-	nop
-	hello      		db 'Hello, ASM!', 0Dh, 0Ah
-	lhello  =    	$ - hello
+	hello      		db 'Hello from resident! :)', 0Dh, 0Ah, '$'
 
 new_2fh:
 	cmp byte ptr cs:has_run, 0
 	je .print_installed
-	jmp .cont
+	jmp .func_switch
 .print_installed:
 	push ax
-	mov si, offset cs:hello
-	call_write_big si, 13
+	push dx
+	call_print cs:hello
 	inc byte ptr cs:has_run
+	pop dx
 	pop ax
-.cont:
-	cmp al, RSD_NUM_STATUS
-	jne .pass	;не функция определения установлена программа или нет
-	cmp ah, RSD_NUM
-	je .catch ; это наш номер, нужно сказать, что мы установлены
-
-	jmp .pass ; номер не наш, передать управление старому обработчику
-.catch:
-	mov al, RSD_INSTALLED
+.func_switch:
+	cmp al, SGNT_CHK
+	je  .signature_check
+	jmp .pass
+.signature_check: 
+	rol dx, 8
 	jmp .iret
 .pass:
 	jmp dword ptr cs:old_2fh
@@ -88,27 +81,21 @@ init:
 	cmp bl, [si*1]
 	je .help
 
-	mov bl, INTRPT
+	mov bl, INSTL
 	cmp bl, [si*1]
-	je interrupt
-	
-	mov bl, FUNC
-	cmp bl, [si*1]
-	je function
+	je install
 
 	jmp .error
 	
+install:
+	xor ax, ax
+	mov al, SGNT_CHK
+	mov dx, SIGNATURE
+	int MULTIPLEX
+	rol dx, 8
+	cmp dx, SIGNATURE
+	je .installed_already
 
-interrupt:
-	call_check_installed
-	call set_vectors
-
-	mov dx, offset init
-	add dx, 2
-	int TSR_INT
-	
-function:
-	call_check_installed
 	call set_vectors
 
 	xor dx, dx	
@@ -123,8 +110,8 @@ function:
 	
 .help:
 	call_print help_msg
-	call_print help_int_msg
-	call_print help_func_msg
+	call_print help_instl_msg
+	call_print help_help_msg
 	jmp .ex_it
 	
 .installed_already:
