@@ -8,17 +8,12 @@ start:
 include macro.asm
 include procs.asm
 
-intrpt_str 		db "interrupt call", "$"
-func_str   		db "function call", "$"
 error_msg   	db "Some error with args. Check help (/?)", "$"
 alr_inst_msg   	db "Program is already resident", "$"
 help_msg    	db "This programm creates resident, using one of the ways:", 0Dh, 0Ah, "$"
 help_int_msg    db "/i - TSR, using 27h DOS interrupt", 0Dh, 0Ah, "$"
 help_func_msg   db "/f - TSR, using 31h function of 21h DOS interrupt", 0Dh, 0Ah, "$"
 buffer			db 8 dup(0)
-old_vector		db 2 dup(?)
-old_2fh 		dd ?
-has_run 		db 0
 output			db 4 dup(0), '$'
 SPACE    = 20h
 QUESTION = 3Fh
@@ -33,8 +28,14 @@ SEMICOLON = 3Ah
 
 main:
 	jmp init
+	old_vector		db 2 dup(?)
+	old_2fh 		dd ?
+	nop ;90
+	has_run 		db 0
+	nop
 	hello      		db 'Hello, ASM!', 0Dh, 0Ah
 	lhello  =    	$ - hello
+
 new_2fh:
 	cmp byte ptr cs:has_run, 0
 	je .print_installed
@@ -42,9 +43,9 @@ new_2fh:
 .print_installed:
 	push ax
 	mov si, offset cs:hello
-	call_write_big si, lhello
-	pop ax
+	call_write_big si, 13
 	inc byte ptr cs:has_run
+	pop ax
 .cont:
 	cmp al, RSD_NUM_STATUS
 	jne .pass	;не функция определения установлена программа или нет
@@ -55,10 +56,11 @@ new_2fh:
 .catch:
 	mov al, RSD_INSTALLED
 	jmp .iret
-.pass:	
+.pass:
 	jmp dword ptr cs:old_2fh
 .iret:
 	iret
+
 
 init:
 	mov si, 81h
@@ -99,16 +101,14 @@ init:
 
 interrupt:
 	call_check_installed
-	;call_print intrpt_str
 	call set_vectors
+
 	mov dx, offset init
 	add dx, 2
 	int TSR_INT
 	
 function:
 	call_check_installed
-	;call_print func_str
-	
 	call set_vectors
 
 	xor dx, dx	
