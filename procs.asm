@@ -1,8 +1,13 @@
 jmp main
 
 MULTIPLEX = 2Fh
-RSD_INSTALLED = 0FFh
 SET_VECTOR  = 25h
+
+free_memory: ; es, *адрес блока*
+	xor ax, ax
+	mov ah, 49h
+	int SYSCALL
+	ret
 
 skip_spaces:
 	xor ah, ah
