@@ -13,6 +13,7 @@ alr_inst_msg   	db "Program is already resident and cannot be reinstalled", "$"
 uninst_err_msg  db "Cannot uninstall", "$"
 vec_equal_msg   db "Deinstallation finished successfully. ", "$"
 vec_not_eq_msg  db "Vectors not equal. ", "$"
+prog_not_inst   db "Program is not installed. ", "$"
 help_msg    	db "This programm installs and uninstalls (if possible) resident program.", 0Dh, 0Ah, "Resident is hooked to INT 2F.", 0Dh, 0Ah, "$"
 help_instl_msg  db "/i - install (if not already), using INT 21 -> 31f;", 0Dh, 0Ah, "$"
 help_un_msg1    db "/u - uninstall, using INT 21 -> 49f.", 0Dh, 0Ah, "$"
@@ -41,15 +42,19 @@ main:
 	hello      		db 'Hello from resident! :)', 0Dh, 0Ah, '$'
 
 new_2fh:
-	cmp byte ptr cs:has_run, 0
+	push ds
+
+	push cs
+	pop  ds
+	cmp byte ptr has_run, 0
 	je .print_installed
 	jmp .func_switch
 
 .print_installed:
 	push ax
 	push dx
-	call_print cs:hello
-	inc byte ptr cs:has_run
+	call_print hello
+	inc byte ptr has_run
 	pop dx
 	pop ax
 
@@ -70,18 +75,22 @@ new_2fh:
 	jmp .iret
 	
 .get_old_int_vector:
-	mov bx,  word ptr cs:old_2fh
-    mov es,  word ptr cs:old_2fh+2
+	mov bx,  word ptr old_2fh
+    mov es,  word ptr old_2fh+2
 	jmp .iret
 	
 .get_handler_int_vect:
 	mov bx, offset new_2fh
 	push cs
-	pop es
+	pop  es
 	jmp .iret
+
 .pass:
+	pop ds
 	jmp cs:old_2fh
+	iret
 .iret:
+	pop ds
 	iret
 
 
@@ -124,19 +133,17 @@ init:
 	
 install:
 	xor ax, ax
-	mov al, SGNT_CHK
-	mov dx, SIGNATURE
-	int MULTIPLEX
-	rol dx, 8
-	cmp dx, SIGNATURE
+	call check_installed
 	jne .inst_1
 	jmp .installed_already
 .inst_1:
+	nop
 	call set_vectors
 
 	xor dx, dx	
 	mov dx, offset init
 	shr dx, 4
+	inc dx
 	inc dx
 	xor ax, ax
 	mov ah, 31h
@@ -145,6 +152,13 @@ install:
 	int SYSCALL
 	
 uninstall:
+	call check_installed
+	je .uninst_1
+	
+	call_print prog_not_inst
+	jmp .cant_uninstall
+
+.uninst_1:
 	mov al, GET_HANDL_INT_VEC
 	int MULTIPLEX
 	

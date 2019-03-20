@@ -27,21 +27,29 @@ skip_spaces:
 		
 set_vectors:
 	push es
-	call_get_vector 2fh
+
+	push 0
+	pop es
+	
+	cli ; запрещаю аппаратные прерывания, чтобы таблица векторов не поменялась
+    mov bx, word ptr es:[2fh * 4] ; загружаю адрес текущего вектора прерывания (смещение)
+	mov es, word ptr es:[2fh * 4 + 2] ; загружаю адрес текущего вектора прерывания (сегмент)
+	
+	mov word ptr old_2fh,   bx
+    mov word ptr old_2fh+2, es
+
 	call print_vector
 	call print_newl
 
-	mov word ptr old_2fh,   bx
-    mov word ptr old_2fh+2, es
+	push 0
+	pop es	
+	mov word ptr es:[2fh * 4], offset new_2fh ;устанавливаю адрес своего обработчика в таблицу прерываний
+	mov word ptr es:[2fh * 4 + 2], cs  ;устанавливаю сегментный адрес своего обработчика в таблицу прерываний
+	sti
 	
-	mov ah, SET_VECTOR
-	mov al, 2fh
-	mov dx, offset new_2fh	;DS:DX -> new interrupt handler
-	int SYSCALL
+	mov bx, word ptr es:[2fh * 4]
+	mov es, word ptr es:[2fh * 4 + 2] 
 	
-	push ds
-	pop es
-	mov bx, offset new_2fh
 	call print_vector
 	
 	pop es

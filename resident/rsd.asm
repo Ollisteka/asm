@@ -28,27 +28,10 @@ SEMICOLON = 3Ah
 
 main:
 	jmp init
-
+	old_vector		db 2 dup(?)
 	old_2fh 		dd ?
-	has_run 		db 0
-	hello      		db 'Hello, ASM!', 0Dh, 0Ah, '$'
 
 new_2fh:
-	push ds
-
-	push cs
-	pop  ds
-	cmp byte ptr has_run, 0
-	je .print_installed
-	jmp .cont
-.print_installed:
-	push ax
-	push dx
-	call_print hello
-	inc byte ptr has_run
-	pop dx
-	pop ax
-.cont:
 	cmp al, RSD_NUM_STATUS
 	jne .pass	;не функция определения установлена программа или нет
 	cmp ah, RSD_NUM
@@ -59,13 +42,9 @@ new_2fh:
 	mov al, RSD_INSTALLED
 	jmp .iret
 .pass:
-	pop ds
-	jmp cs:old_2fh
-	iret
+	jmp dword ptr cs:old_2fh
 .iret:
-	pop ds
 	iret
-
 
 
 init:
