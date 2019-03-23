@@ -1,23 +1,77 @@
 jmp main
+str2dec_error db "Couldn't parse a number", 0Dh, 0Ah, "$"
+mp_comb_error db "Combination of those mode and page number are illegal. Check help (/?)", "$"
+mode_range_error  db "Ivalid mode number. Check help (/?)", "$"
 
-MULTIPLEX = 2Fh
-SET_VECTOR  = 25h
-
-check_installed:
-	mov al, SGNT_CHK
-	mov dx, SIGNATURE
-	int MULTIPLEX
-	rol dx, 8
-	cmp dx, SIGNATURE
+check_args_consistency proc
+	cmp byte ptr mode_num, 1
+	jbe zero_one_modes
+	cmp byte ptr mode_num, 3
+	jbe two_three_modes
+	jmp @@mode_error
+	
+zero_one_modes:
+	cmp byte ptr page_num, 8
+	jae @@error
+	ret
+	
+two_three_modes:
+	cmp byte ptr page_num, 4
+	jae @@error
 	ret
 
-free_memory: ; es, *адрес блока*
-	xor ax, ax
-	mov ah, 49h
-	int SYSCALL
+@@error:
+	call_print mp_comb_error
+	jmp .ex_it
+	
+@@mode_error:
+	call_print mode_range_error
+	jmp .ex_it	
+	
+endp check_args_consistency
+
+str2dec proc ;input: si
+	push bx dx
+    xor  ax, ax
+	xor  dx, dx
+	mov  dl, 10
+
+.str2dec_loop:
+	cmp cx, 0
+	je  @@ret
+    mov bl, [si*1]
+	cmp bl, SPACE
+	je 	@@ret
+	cmp bl, SLASH
+	je 	@@ret
+    sub bl, '0'
+    cmp bl, 10
+    jnb @@error
+
+    mul dl
+    add ax, bx
+    call move_pointer
+    jmp .str2dec_loop
+	
+@@error:
+	call_print str2dec_error
+	call_exit
+ 
+@@ret:
+    pop dx bx
+
+	ret
+
+endp str2dec	
+	
+move_pointer:
+	inc si
+	dec cx
 	ret
 
 skip_spaces:
+	cmp cx, 0
+	je .ex
 	xor ah, ah
     mov al, [si*1]    ; letter
     mov bl, SPACE
@@ -27,74 +81,7 @@ skip_spaces:
     ret
 
     skip_char:
-        inc si
-        dec cx
+        call move_pointer
 		cmp cx, 0
 		je .ex
         jmp skip_spaces
-		
-set_vectors:
-	push es
-
-	push 0
-	pop es
-	
-	cli ; запрещаю аппаратные прерывания, чтобы таблица векторов не поменялась
-    mov bx, word ptr es:[2fh * 4] ; загружаю адрес текущего вектора прерывания (смещение)
-	mov es, word ptr es:[2fh * 4 + 2] ; загружаю адрес текущего вектора прерывания (сегмент)
-	
-	mov word ptr old_2fh,   bx
-    mov word ptr old_2fh+2, es
-
-	call print_vector
-	call print_newl
-
-	push 0
-	pop es	
-	mov word ptr es:[2fh * 4], offset new_2fh ;устанавливаю адрес своего обработчика в таблицу прерываний
-	mov word ptr es:[2fh * 4 + 2], cs  ;устанавливаю сегментный адрес своего обработчика в таблицу прерываний
-	sti
-	
-	mov bx, word ptr es:[2fh * 4]
-	mov es, word ptr es:[2fh * 4 + 2] 
-	
-	call print_vector
-	
-	pop es
-	ret
-	
-print_vector:  ;es:segment bx:offset
-	mov ax, es
-	call reg_to_str
-
-	mov al, SEMICOLON
-	int 29h
-
-	mov ax, bx
-	call reg_to_str
-	ret
-	
-print_newl:
-	mov al, 0Dh
-	int 29h
-	mov al, 0Ah
-	int 29h
-	ret
-	
-reg_to_str: ;->AX
-    mov di, offset output
-    mov cl, 4
-rts1: rol ax, 4
-    mov bl, al
-    and bl, 0Fh          ; only low-Nibble
-    add bl, 30h          ; convert to ASCII
-    cmp bl, 39h          ; above 9?
-    jna rts2
-    add bl, 7            ; "A" to "F"
-rts2: mov [di], bl         ; store ASCII in buffer
-    inc di              ; increase target address
-    dec cl              ; decrease loop counter
-    jnz rts1              ; jump if cl is not equal 0 (zeroflag is not set)
-
-    call_print output
-    ret
