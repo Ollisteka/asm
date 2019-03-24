@@ -1,7 +1,9 @@
 jmp main
-str2dec_error db "Couldn't parse a number", 0Dh, 0Ah, "$"
+str2dec_error db "Couldn't parse a number", "$"
 mp_comb_error db "Combination of those mode and page number are illegal. Check help (/?)", "$"
 mode_range_error  db "Ivalid mode number. Check help (/?)", "$"
+
+SPACE = 20h
 
 check_args_consistency proc
 	cmp byte ptr mode_num, 1
@@ -42,7 +44,7 @@ str2dec proc ;input: si
     mov bl, [si*1]
 	cmp bl, SPACE
 	je 	@@ret
-	cmp bl, SLASH
+	cmp bl, '/'
 	je 	@@ret
     sub bl, '0'
     cmp bl, 10

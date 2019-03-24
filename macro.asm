@@ -9,6 +9,16 @@ RSD_INSTALLED = 0FFh
 
 jmp main
 
+create_attribute macro background_color, foreground_color
+	; attribute = blink_bit + foreground_color + bright_bit + background_color
+	xor bl, bl
+	mov bl, 0
+	shl bl, 3
+	or bl, byte ptr background_color
+	shl bl, 4
+	or bl, byte ptr foreground_color 
+endm
+
 jmp_if_bit_set macro mask, label
     test byte ptr flags, mask
 	jnz  label ; прыгнем, если бит установлен
@@ -34,5 +44,4 @@ call_arg_parse macro arg_mask, arg_var
 	mov byte ptr arg_var, al
 	mov al, byte ptr arg_var
 	call check_args_consistency
-	jmp .parse_lp
 endm
