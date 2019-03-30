@@ -10,6 +10,8 @@ check_args_consistency proc
 	jbe zero_one_modes
 	cmp byte ptr mode_num, 3
 	jbe two_three_modes
+	cmp byte ptr mode_num, 7
+	je  seventh_mode
 	jmp @@mode_error
 	
 zero_one_modes:
@@ -19,6 +21,11 @@ zero_one_modes:
 	
 two_three_modes:
 	cmp byte ptr page_num, 4
+	jae @@error
+	ret
+	
+seventh_mode:
+	cmp byte ptr page_num, 8
 	jae @@error
 	ret
 

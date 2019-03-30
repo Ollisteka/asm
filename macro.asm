@@ -10,7 +10,7 @@ RSD_INSTALLED = 0FFh
 jmp main
 
 create_attribute macro background_color, foreground_color
-	; attribute = blink_bit + foreground_color + bright_bit + background_color
+	; attribute = blink_bit + background_color + foreground_color
 	xor bl, bl
 	mov bl, 0
 	shl bl, 3

@@ -14,6 +14,7 @@ help_msg    	db "This programm prints ASCII table on the screen", 0Dh, 0Ah, "$"
 help_mode_msg1  db "/m - specify, which mode to use (default 0):", 0Dh, 0Ah, "$"
 help_mode_msg2  db "     0, 1 - 16 colors, 40x25 (25 rows with 40 symbols) with gray\without", 0Dh, 0Ah, "$"
 help_mode_msg3  db "     2, 3 - 16 colors, 80x25 with gray\without", 0Dh, 0Ah, "$"
+help_mode_msg4  db "     7 - 3 colors, 80x25", 0Dh, 0Ah, "$"
 help_page_msg1  db "/p - specify, on which page to print (default 0):", 0Dh, 0Ah, "$"
 help_page_msg2  db "     0-7 for modes 0 and 1.", 0Dh, 0Ah, "$"
 help_page_msg3  db "     0-3 for modes 2 and 3.", 0Dh, 0Ah, "$"
@@ -111,7 +112,7 @@ prog:
 cloop:
 	cmp dh, 15 + HEIGHT_OFFSET
 	je clp2
-	mov bl, 00010111b
+	mov bl, 00010000b
 clp2:
 	cmp dh, 2 + HEIGHT_OFFSET
 	je third_row_lp
@@ -174,7 +175,7 @@ clp1:
 	
 	cmp dh, 15 + HEIGHT_OFFSET
 	jne continue_loop
-	mov bl, 10100100b
+	mov bl, 10001100b
 
 	
 continue_loop:
@@ -202,6 +203,7 @@ continue_loop:
 	call_print help_mode_msg1
 	call_print help_mode_msg2
 	call_print help_mode_msg3
+	call_print help_mode_msg4
 	call_print help_page_msg1
 	call_print help_page_msg2
 	call_print help_page_msg3
