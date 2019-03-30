@@ -11,17 +11,22 @@ jmp main
 
 create_attribute macro background_color, foreground_color
 	; attribute = blink_bit + background_color + foreground_color
-	xor bl, bl
-	mov bl, 0
-	shl bl, 3
-	or bl, byte ptr background_color
-	shl bl, 4
-	or bl, byte ptr foreground_color 
+	xor ah, ah
+	mov ah, 0
+	shl ah, 3
+	or ah, byte ptr background_color
+	shl ah, 4
+	or ah, byte ptr foreground_color 
 endm
 
 jmp_if_bit_set macro mask, label
     test byte ptr flags, mask
 	jnz  label ; прыгнем, если бит установлен
+endm
+
+jmp_if_bit_not_set macro mask, label
+    test byte ptr flags, mask
+	jz  label ; прыгнем, если бит НЕ установлен
 endm
 
 call_print macro buffer

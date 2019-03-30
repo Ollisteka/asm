@@ -18,17 +18,24 @@ help_mode_msg4  db "     7 - 3 colors, 80x25", 0Dh, 0Ah, "$"
 help_page_msg1  db "/p - specify, on which page to print (default 0):", 0Dh, 0Ah, "$"
 help_page_msg2  db "     0-7 for modes 0 and 1.", 0Dh, 0Ah, "$"
 help_page_msg3  db "     0-3 for modes 2 and 3.", 0Dh, 0Ah, "$"
+help_blink_msg  db "/b - if set, enables blinking letters. Otherwise enables background intensity;", 0Dh, 0Ah, "$"
 help_help_msg   db "/? - this help.", "$"
 mode_num		db 0
 page_num		db 0
-flags   		db 0  ;X|X|X|X|X|X|PAGE_PARSED|MODE_PARSED|
+flags   		db 0  ;X|X|X|X|X|BLINK_ENABLED|PAGE_PARSED|MODE_PARSED|
 fg_color 		db ?
 bg_color 		db ?
 third_row		db 0
 WIDTH_OFFSET    db (80-31)/2
+COLUMN_NUM		db ?
+first_row_xor   dw 00001111b
 MODE_MASK = 1
 PAGE_MASK = 2
+BLINK_MASK = 4
 HEIGHT_OFFSET = (25 - 16)/2
+DISPLAY_MODE = 0449h
+ACTIVE_PAGE = 0462h
+COLUMN_NUM_LM = 044ah
 
 main:
 	mov si, 81h
@@ -76,43 +83,71 @@ jmp_to_lp:
 try_page_parse:
 	mov bl, 'p'
 	cmp bl, [si*1]
-	jne .error
+	jne try_blink_parse
 	call_arg_parse PAGE_MASK, page_num
+	jmp .parse_lp
+	
+try_blink_parse:
+	mov bl, 'b'
+	cmp bl, [si*1]
+	jne .error
+	jmp_if_bit_set BLINK_MASK, .double_arg_error
+	or byte ptr flags, BLINK_MASK
+	call move_pointer
 	jmp .parse_lp
 	
 prog:
 	;save display
-	mov ah, 0fh   ; AH = number of character columns
-	int 10h  	  ; AL = display mode
-                  ; BH = active page
-	push bx ax
+	mov si, ACTIVE_PAGE
+	call read_byte_lm
+	push ax
+
+	mov si, DISPLAY_MODE
+	call read_byte_lm
+	push ax
 
 	mov ah, 00h
 	mov al, byte ptr mode_num
 	;or al, 80h
 	int 10h
 	
+	mov si, COLUMN_NUM_LM
+	call read_word_lm
+	mov byte ptr COLUMN_NUM, al
+	
 	mov ah, 05h
 	mov al, byte ptr page_num
 	int 10h
+	
+	mov ax, 1003h
+	xor bx, bx
+	jmp_if_bit_not_set BLINK_MASK, @@skip_inc
+	and byte ptr first_row_xor, 00000111b
+	inc bl
+@@skip_inc:
+	int 10h
 
+	;hide cursor
 	mov ah, 02h
+	mov bh, byte ptr page_num
+	xor dx, dx
+	mov dh, byte ptr COLUMN_NUM
+	shl dh, 2
+	int 10h
+	
 	xor dx, dx
 	add dh, HEIGHT_OFFSET
 	add dl, WIDTH_OFFSET
-	mov bh, byte ptr page_num
-	int 10h
 	
 	mov si, 256
 	mov al, 0 ; символ
-	mov ah, 9 ; функция
-	mov cx, 1 ; число повторений
+	mov ah, 00011111b ; атрибут
 	mov bh, byte ptr page_num 
 	
 cloop:
 	cmp dh, 15 + HEIGHT_OFFSET
 	je clp2
-	mov bl, 00010000b
+	mov ah, 00011111b
 clp2:
 	cmp dh, 2 + HEIGHT_OFFSET
 	je third_row_lp
@@ -125,25 +160,23 @@ first_row_lp:
 	shr dx, 1
 	and dx, 000Fh ;номер символа в строке
 	mov byte ptr fg_color, dl
-	and dl, 00000111b
-	xor dl, 00000111b
+	and dl, byte ptr first_row_xor
+	xor dl, byte ptr first_row_xor
 	mov byte ptr bg_color, dl
 	create_attribute bg_color, fg_color
 	pop dx
 	jmp clp1
 
 third_row_lp:
-	mov bl, byte ptr third_row
+	mov ah, byte ptr third_row
 	add byte ptr third_row, 10000b
+	jmp_if_bit_not_set BLINK_MASK, clp1
 	and byte ptr third_row, 01111111b
 clp1:
-	int 10h
-	
-	push ax
-	mov ah, 2
+	call calc_address
+	stosw
+
 	inc dl  ; увеличиваем столбец
-	int 10h ; переместить курсор
-	pop ax
 
 	push ax
 	inc al
@@ -152,13 +185,11 @@ clp1:
 	pop ax
 
 	push ax 
-	mov ax, 0920h
-	int 10h ; напечатать пробел
+	call calc_address
+	mov al, 20h
+	stosw
 	
-	mov ah, 2
 	inc dl  ; увеличиваем столбец
-	int 10h ; переместить курсор
-
 	
 @@skip_last_space:
 	pop ax
@@ -166,16 +197,12 @@ clp1:
 	test al, 0Fh
 	jnz continue_loop
 	
-	push ax
-	mov ah, 2
 	inc dh ; увеличиваем строчку
 	mov dl, WIDTH_OFFSET
-	int 10h ;переводим куросор на новую строку
-	pop ax
 	
 	cmp dh, 15 + HEIGHT_OFFSET
 	jne continue_loop
-	mov bl, 10001100b
+	mov ah, 10001100b
 
 	
 continue_loop:
@@ -192,7 +219,6 @@ continue_loop:
 	mov ah, 00h
 	int 10h
 	pop ax
-	shr ax, 0Fh
 	mov ah, 05h
 	int 10h
 	
@@ -207,6 +233,7 @@ continue_loop:
 	call_print help_page_msg1
 	call_print help_page_msg2
 	call_print help_page_msg3
+	call_print help_blink_msg
 	call_print help_help_msg
 	jmp .ex_it
 
