@@ -28,7 +28,13 @@ bg_color 		db ?
 third_row		db 0
 WIDTH_OFFSET    db (80-31)/2
 COLUMN_NUM		db ?
+old_mode		db ?
+old_page		db ?
 first_row_xor   dw 00001111b
+current_mode_page_str db "Current mode is X, page is Y"
+current_mp_str_len = $ - current_mode_page_str
+current_mode_offset = 12*2
+current_page_offset = 1*2
 MODE_MASK = 1
 PAGE_MASK = 2
 BLINK_MASK = 4
@@ -36,6 +42,7 @@ HEIGHT_OFFSET = (25 - 16)/2
 DISPLAY_MODE = 0449h
 ACTIVE_PAGE = 0462h
 COLUMN_NUM_LM = 044ah
+ROWS_NUM_LM = 0484h
 
 main:
 	mov si, 81h
@@ -101,11 +108,23 @@ prog:
 	mov si, ACTIVE_PAGE
 	call read_byte_lm
 	push ax
+	add ax, '0'
+	mov byte ptr old_page, al
 
 	mov si, DISPLAY_MODE
 	call read_byte_lm
 	push ax
+	add ax, '0'
+	mov byte ptr old_mode, al
+	call clear_screen
 
+	mov si, ROWS_NUM_LM
+	call read_byte_lm
+	shr al, 1
+	call print_mode_page
+
+	
+	;set new mode\page
 	mov ah, 00h
 	mov al, byte ptr mode_num
 	;or al, 80h
@@ -127,13 +146,13 @@ prog:
 @@skip_inc:
 	int 10h
 
-	;hide cursor
-	mov ah, 02h
-	mov bh, byte ptr page_num
-	xor dx, dx
-	mov dh, byte ptr COLUMN_NUM
-	shl dh, 2
-	int 10h
+	call hide_cursor
+	
+	xor ax, ax
+	mov al, HEIGHT_OFFSET
+	dec al
+	nop
+	call print_mode_page
 	
 	xor dx, dx
 	add dh, HEIGHT_OFFSET
@@ -142,7 +161,6 @@ prog:
 	mov si, 256
 	mov al, 0 ; символ
 	mov ah, 00011111b ; атрибут
-	mov bh, byte ptr page_num 
 	
 cloop:
 	cmp dh, 15 + HEIGHT_OFFSET
