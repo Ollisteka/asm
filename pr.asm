@@ -3,28 +3,32 @@
 org 100h
 locals @@
 
-int_08:
-	db 0eadh
-	old_addr dw 0, 0
-
-
 _start:
-	mov si, 4*8
-	mov di, offset old_addr
-	push ds
-	xor ax, ax
-	mov ds, ax
-	movsw
-	movsw
-	push ds
-	push es
-	pop ds
-	pop es
-	mov di, 4*8
-	mov ax, offset int_08
-	cli
-	stosw
-	mov ax, cs
-	stosw
-	sti
+	mov ax, 4
+	int 10h
 	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax, 5555h
+	mov di, 400+40-1
+	stosw
+	
+	add di, 78
+	stosw
+	add di, 78
+	stosw
+	
+	add di, 400+40-1+2000h
+	stosw
+	add di, 78
+	stosw
+	add di, 78
+	stosw
+
+	xor ax, ax
+	int 16h
+	mov ax, 3
+	int 10h
+	
+	ret
+end _start
