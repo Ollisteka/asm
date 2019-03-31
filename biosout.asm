@@ -26,11 +26,8 @@ flags   		db 0  ;X|X|X|X|X|BLINK_ENABLED|PAGE_PARSED|MODE_PARSED|
 fg_color 		db ?
 bg_color 		db ?
 third_row		db 0
-WIDTH_OFFSET    db (80-31)/2
-COLUMN_NUM		db ?
-old_mode		db ?
-old_page		db ?
-first_row_xor   dw 00001111b
+WIDTH_OFFSET	db (80-31)/2
+first_row_xor	dw 00001111b
 current_mode_page_str db "Current mode is X, page is Y"
 current_mp_str_len = $ - current_mode_page_str
 current_mode_offset = 12*2
@@ -105,34 +102,26 @@ try_blink_parse:
 	
 prog:
 	;save display
-	mov si, ACTIVE_PAGE
-	call read_byte_lm
+	read_byte_lowmem ACTIVE_PAGE
 	push ax
 	add ax, '0'
-	mov byte ptr old_page, al
 
-	mov si, DISPLAY_MODE
-	call read_byte_lm
+	read_byte_lowmem DISPLAY_MODE
 	push ax
 	add ax, '0'
-	mov byte ptr old_mode, al
 	call clear_screen
+	call hide_cursor
 
-	mov si, ROWS_NUM_LM
-	call read_byte_lm
+	read_byte_lowmem ROWS_NUM_LM
 	shr al, 1
 	call print_mode_page
-
+	call wait_for_key_press
 	
 	;set new mode\page
 	mov ah, 00h
 	mov al, byte ptr mode_num
 	;or al, 80h
 	int 10h
-	
-	mov si, COLUMN_NUM_LM
-	call read_word_lm
-	mov byte ptr COLUMN_NUM, al
 	
 	mov ah, 05h
 	mov al, byte ptr page_num
@@ -146,13 +135,12 @@ prog:
 @@skip_inc:
 	int 10h
 
-	call hide_cursor
 	
 	xor ax, ax
 	mov al, HEIGHT_OFFSET
 	dec al
-	nop
 	call print_mode_page
+	call hide_cursor
 	
 	xor dx, dx
 	add dh, HEIGHT_OFFSET
@@ -165,7 +153,7 @@ prog:
 cloop:
 	cmp dh, 15 + HEIGHT_OFFSET
 	je clp2
-	mov ah, 00011111b
+	mov ah, 00001111b
 clp2:
 	cmp dh, 2 + HEIGHT_OFFSET
 	je third_row_lp
@@ -222,14 +210,12 @@ clp1:
 	jne continue_loop
 	mov ah, 10001100b
 
-	
 continue_loop:
 	dec si
 	jnz cloop
 	
 	push ax
-	xor ax, ax
-	int 16h
+	call wait_for_key_press
 	pop ax
 	
 	;restore display

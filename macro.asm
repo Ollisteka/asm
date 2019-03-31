@@ -9,6 +9,16 @@ RSD_INSTALLED = 0FFh
 
 jmp main
 
+read_byte_lowmem macro address
+	mov si, address
+	call read_byte_lm
+endm
+
+read_word_lowmem macro address
+	mov si, address
+	call read_word_lm
+endm
+
 create_attribute macro background_color, foreground_color
 	; attribute = blink_bit + background_color + foreground_color
 	xor ah, ah

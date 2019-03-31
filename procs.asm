@@ -7,9 +7,7 @@ SPACE = 20h
 
 print_mode_page proc
 	push ax
-	mov si, COLUMN_NUM_LM
-	call read_word_lm
-	mov byte ptr COLUMN_NUM, al
+	read_word_lowmem COLUMN_NUM_LM
 	sub al, current_mp_str_len
 	shr al, 1
 
@@ -19,12 +17,11 @@ print_mode_page proc
 	pop ax
 	mov dh, al
 
-	mov cx, current_mp_str_len
 	mov ah, 00001111b
 	mov si, offset current_mode_page_str
-	nop
 	call calc_address
-	
+	mov cx, current_mp_str_len
+
 @@pr_ch:
 	mov al, [si*1]
 	stosw
@@ -32,57 +29,48 @@ print_mode_page proc
 	loop @@pr_ch
 	
 	sub di, current_page_offset
-	mov si, ACTIVE_PAGE
-	push ax
-	call read_byte_lm
+	read_byte_lowmem ACTIVE_PAGE
 	add al, '0'
-	mov bl, al
-	pop ax
-	mov al, bl
+	mov ah, 00001111b
 	stosw
 	
 	sub di, current_mode_offset
-	mov si, DISPLAY_MODE
-	push ax
-	call read_byte_lm
+	read_byte_lowmem DISPLAY_MODE
 	add al, '0'
-	mov bl, al
-	pop ax
-	mov al, bl
+	mov ah, 00001111b
 	stosw
-	
-	call hide_cursor
-	
-	xor ax,ax
-	int 16h
 	
 	ret
 endp print_mode_page
 
+wait_for_key_press:
+	xor ax,ax
+	int 16h
+	ret
+
 hide_cursor:
+	read_byte_lowmem ACTIVE_PAGE
+	mov bh, al
+
+	xor ax, ax
 	mov ah, 02h
-	mov bh, byte ptr page_num
+
 	xor dx, dx
-	mov dh, byte ptr COLUMN_NUM
-	shl dh, 2
+	mov dh, 25
+
 	int 10h
 	ret
-	
+
 get_total_symbols_count:
-	push es
-	mov ax , 0B800H
-	mov es , ax
 	mov dh, 25
-	mov si, COLUMN_NUM_LM
-	call read_word_lm
+	read_word_lowmem COLUMN_NUM_LM
 	mul dh ;ax - символы на странице
-	pop es
 	ret
 
 clear_screen proc
 	call get_total_symbols_count
 	mov cx, ax
-	mov ax, 0B800H
+	call get_video_segment
 	push es
 	mov es, ax
 	xor di, di
@@ -95,35 +83,25 @@ endp clear_screen
 calc_address proc
 	; input: DH = row number (0 - 24) , DL = column number (0 - 79)
 	; output: ES:DI contains the required segment : offset address
-	; Character offset = ( row# * 80 + column# ) * 2 = ( row# * (64 + 16) + column# ) * 2
-	; Character offset = ( row# * 40 + column# ) * 2 = ( row# * (32 + 8) + column# ) * 2
+	; Character offset = ( row# * 80/40 + column# ) * 2 
+	; Base = B800/b000 + 100h/80h * page#
 	push ax bx cx si
 
 	xor bx, bx
-	mov si, ACTIVE_PAGE
-	call read_byte_lm
-	cmp ax, 0
-	je @@cont
-	mov cx, ax ; cx = active page	
-	mov si, DISPLAY_MODE
-	call read_byte_lm
-	cmp ax, 2
-	jae @@1
-	mov ax, 80h
-	xor bx, bx
-	jmp @@add
-	
-@@1:
-	xor bx, bx
-	mov ax, 0100h
+	read_byte_lowmem ACTIVE_PAGE
+
+	mov cx, ax ; cx = active page
+	call get_page_size
 @@add:
 	add bx, ax
 	loop @@add
-@@cont:	
-	mov ax, 0B800h
+
+	call get_video_segment
 	add ax, bx
 	mov es, ax
-	mov bl, byte ptr COLUMN_NUM
+
+	read_word_lowmem COLUMN_NUM_LM
+	mov bl, al
 	xor ax, ax
 	mov al, dh ; AX := row#
 	mul bl   ; AX := row# * (80 or 40)
@@ -139,6 +117,28 @@ calc_address proc
 	pop si cx bx ax
 	ret
 endp calc_address
+
+get_page_size:
+	read_byte_lowmem DISPLAY_MODE
+	cmp ax, 2
+	jae @@big_pages
+		mov ax, 80h
+		ret
+	
+	@@big_pages:
+		mov ax, 0100h
+		ret
+
+
+get_video_segment:
+	read_byte_lowmem DISPLAY_MODE
+	cmp al, 7
+	je @@seventh_mode
+		mov ax, 0B800h
+		ret
+	@@seventh_mode:
+		mov ax, 0B000h
+		ret
 
 read_byte_lm proc
 	push es
