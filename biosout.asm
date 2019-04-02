@@ -1,6 +1,6 @@
 .model tiny
 .code
-.386
+
 org 100h
 locals @@
 
@@ -42,66 +42,13 @@ COLUMN_NUM_LM = 044ah
 ROWS_NUM_LM = 0484h
 
 main:
-	mov si, 81h
-	xor cx, cx
-	mov cl, ds:[0080h*1]
-
-	cmp cl, 0
-	jne .parse_lp
-	jmp .help
-.parse_lp:
-	call skip_spaces
-	
-	cmp cx, 2
-	jae @@2
-	
-	mov al, MODE_MASK
-	or al, PAGE_MASK
-	test byte ptr flags, al
-	jz .error
-
-	jmp prog
-	
-@@2:
-	mov bl, '/'
-	cmp [si*1], bl
-	je @@3
-	jmp .error
-@@3:
-	call move_pointer
-	mov bl, '?'
-	cmp bl, [si*1]
-	je .help
-
-try_mode_parse:
-	mov bl, 'm'
-	cmp bl, [si*1]
-	jne try_page_parse
-	call_arg_parse MODE_MASK, mode_num
-	cmp byte ptr mode_num, 1
-	ja jmp_to_lp
-	mov byte ptr WIDTH_OFFSET, (40-31)/2
-jmp_to_lp:
-	jmp .parse_lp
-
-try_page_parse:
-	mov bl, 'p'
-	cmp bl, [si*1]
-	jne try_blink_parse
-	call_arg_parse PAGE_MASK, page_num
-	jmp .parse_lp
-	
-try_blink_parse:
-	mov bl, 'b'
-	cmp bl, [si*1]
-	jne .error
-	jmp_if_bit_set BLINK_MASK, .double_arg_error
-	or byte ptr flags, BLINK_MASK
-	call move_pointer
-	jmp .parse_lp
-	
+	include argpars.asm
 prog:
+	cmp byte ptr mode_num, 1
+	ja @@skip_width_change
+	mov byte ptr WIDTH_OFFSET, (40-31)/2
 	;save display
+@@skip_width_change:	
 	read_byte_lowmem ACTIVE_PAGE
 	push ax
 	add ax, '0'
@@ -109,6 +56,7 @@ prog:
 	read_byte_lowmem DISPLAY_MODE
 	push ax
 	add ax, '0'
+	
 	call clear_screen
 	call hide_cursor
 
@@ -135,7 +83,6 @@ prog:
 @@skip_inc:
 	int 10h
 
-	
 	xor ax, ax
 	mov al, HEIGHT_OFFSET
 	dec al
@@ -151,10 +98,10 @@ prog:
 	mov ah, 00011111b ; атрибут
 	
 cloop:
-	cmp dh, 15 + HEIGHT_OFFSET
-	je clp2
-	mov ah, 00001111b
-clp2:
+	cmp dh, 15 + HEIGHT_OFFSET ; дошли до края
+	je @@skip_color_set
+	mov ah, 00011111b
+@@skip_color_set:
 	cmp dh, 2 + HEIGHT_OFFSET
 	je third_row_lp
 	cmp dh, 0 + HEIGHT_OFFSET
@@ -162,15 +109,7 @@ clp2:
 	jmp clp1
 
 first_row_lp:
-	push dx
-	shr dx, 1
-	and dx, 000Fh ;номер символа в строке
-	mov byte ptr fg_color, dl
-	and dl, byte ptr first_row_xor
-	xor dl, byte ptr first_row_xor
-	mov byte ptr bg_color, dl
-	create_attribute bg_color, fg_color
-	pop dx
+	call create_first_row_color
 	jmp clp1
 
 third_row_lp:
@@ -221,32 +160,14 @@ continue_loop:
 	;restore display
 	pop ax
 	mov ah, 00h
+	
 	int 10h
 	pop ax
+
 	mov ah, 05h
 	int 10h
-	
-	jmp .ex_it
-	
-.help:
-	call_print help_msg
-	call_print help_mode_msg1
-	call_print help_mode_msg2
-	call_print help_mode_msg3
-	call_print help_mode_msg4
-	call_print help_page_msg1
-	call_print help_page_msg2
-	call_print help_page_msg3
-	call_print help_blink_msg
-	call_print help_help_msg
-	jmp .ex_it
 
-.double_arg_error:
-	call_print double_arg_err_msg
 	jmp .ex_it
-	
-.error:
-	call_print error_msg
 
 .ex_it:
 	call_exit

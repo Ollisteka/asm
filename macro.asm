@@ -57,6 +57,5 @@ call_arg_parse macro arg_mask, arg_var
 	call skip_spaces
 	call str2dec
 	mov byte ptr arg_var, al
-	mov al, byte ptr arg_var
 	call check_args_consistency
 endm

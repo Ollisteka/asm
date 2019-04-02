@@ -2,8 +2,41 @@ jmp main
 str2dec_error db "Couldn't parse a number", "$"
 mp_comb_error db "Combination of those mode and page number are illegal. Check help (/?)", "$"
 mode_range_error  db "Ivalid mode number. Check help (/?)", "$"
+screen_buffer dw  (80*25) dup (?)
 
 SPACE = 20h
+
+arg_parse proc ;arg_mask, arg_var, error
+	pop bp
+	pop ax
+	pop bx
+	test byte ptr flags, al
+	jz  @@continue
+	jmp bx
+@@continue:
+	or byte ptr flags, al
+	call move_pointer
+	call skip_spaces
+	call str2dec
+	pop bx
+	mov [bx*1], al
+	call check_args_consistency
+	push bp
+	ret
+endp arg_parse
+
+create_first_row_color proc
+	push dx
+	shr dx, 1
+	and dx, 000Fh ;номер символа в строке
+	mov byte ptr fg_color, dl
+	and dl, byte ptr first_row_xor
+	xor dl, byte ptr first_row_xor
+	mov byte ptr bg_color, dl
+	create_attribute bg_color, fg_color
+	pop dx
+	ret
+endp create_first_row_color
 
 print_mode_page proc
 	push ax
@@ -89,13 +122,16 @@ calc_address proc
 
 	xor bx, bx
 	read_byte_lowmem ACTIVE_PAGE
-
+	
+	cmp ax, 0
+	je @@skip_add
 	mov cx, ax ; cx = active page
 	call get_page_size
 @@add:
 	add bx, ax
 	loop @@add
 
+@@skip_add:
 	call get_video_segment
 	add ax, bx
 	mov es, ax
