@@ -1,34 +1,30 @@
 .model tiny
 .code
 org 100h
-locals @@
 
-_start:
-	mov ax, 4
-	int 10h
-	
-	mov ax, 0b800h
-	mov es, ax
-	mov ax, 5555h
-	mov di, 400+40-1
-	stosw
-	
-	add di, 78
-	stosw
-	add di, 78
-	stosw
-	
-	add di, 400+40-1+2000h
-	stosw
-	add di, 78
-	stosw
-	add di, 78
-	stosw
+start:
 
+include macro.asm
+
+MAX_LEN = 5
+
+buffer db MAX_LEN, 5, 61, 62, 63, 64, 65, 0
+
+main:
 	xor ax, ax
-	int 16h
-	mov ax, 3
-	int 10h
+	mov ah, 0Ah
+	mov dx, offset buffer
+	int 21h
 	
-	ret
-end _start
+	xor bx, bx
+	mov bl, byte ptr buffer + 1
+	mov byte ptr buffer + [bx] + 2, '$'
+	mov byte ptr buffer + 1, 0Ah	
+	
+	mov	ah,   09h
+	mov dx,	  offset buffer
+	inc dx
+	int 21h
+	
+	call_exit
+end start
