@@ -76,11 +76,15 @@ _loop:
 	
 		add bx, offset kb_buffer
 		mov ax, [bx]
+		mov di, offset output
 		call reg_to_str
 		mov ah, PRINT_STR
 		mov dx, offset output
 		add dx, 3
 		int SYSCALL
+		
+		
+		
 	inc [head]
 	cmp [head], BUF_LEN
 	jb _loop

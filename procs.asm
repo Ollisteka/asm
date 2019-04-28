@@ -1,7 +1,6 @@
 jmp main
 
-reg_to_str: ;->AX
-    mov di, offset output
+reg_to_str: ;DI->  ->AX;
     mov cl, 4
 rts1: 
 	cmp cl, 2
