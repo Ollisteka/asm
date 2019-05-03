@@ -5,17 +5,24 @@ ORG 100h
 locals @@
 
 start:
-	include macro.asm
 	include procs.asm
+	include macro.asm
 	include paint.asm
 	
 mode_num		db 0
 page_num		db 0
 
 field_color		db 1
+circle_color    db 2
 
 upper_left_x   dw 150
 upper_left_y   dw 115
+
+center_x	   dw  ?
+center_y	   dw  ?
+
+prev_x 		dw ?
+prev_y 		dw ?
 
 VIDEO_SEG = 0A000h
 MAX_WIDTH = 640
@@ -25,6 +32,8 @@ LINE_WIDTH = 5
 
 FIELD_WIDTH = 325
 FIELD_HEIGHT = 125
+
+CIRCLE_RADIUS = 20
 
 main:
 	read_byte_lowmem ACTIVE_PAGE
@@ -38,12 +47,29 @@ main:
 	;or al, 80h
 	int 10h
 	
-	mov ax, 1
-	int 33h
+	mov ax, [upper_left_x]
+	add ax, 2
+	mov [center_x], ax
+	mov ax, [upper_left_y]
+	add ax, FIELD_HEIGHT / 2
+	mov [center_y], ax
 	
 	mov al, [field_color]
 	call change_color
 	call draw_rectangle
+	
+	call change_color_circle
+	
+	call draw_filled_circle
+	
+	mov ax, 1
+	int 33h
+	
+	mov ax, 3
+	int 33h
+	
+	mov [prev_x], cx
+	mov [prev_y], dx
 	
 	call add_mouse_handler
 	
@@ -82,13 +108,13 @@ add_mouse_handler:
 ;бит 6 — отпускание средней кнопки
 ;СХ = 0000h — отменить обработчик
 	mov         ax, 0Ch
-    mov         cx, 08h
-    mov         dx, offset pkm_handler
+    mov         cx, 01001b
+    mov         dx, offset mouse_handler
     int         33h
 	ret
 
 	
-pkm_handler:
+mouse_handler proc
 ;АХ = условие вызова
 ;ВХ = состояние кнопок
 ;СХ, DX — X- и Y-координаты курсора
@@ -97,66 +123,57 @@ pkm_handler:
 	push ds cs
 	pop ds
 	
-	mov si, LINE_WIDTH
-	mov ax, [upper_left_x]
-	mov bx, [upper_left_y]
-	jmp @@cmp_loop
-@@cmp_loop:
-	;Mouse_X-coord == Line_X-coord
-	cmp cx, ax
-	je @@check_y_range
+	test ax, 1
+	;jnz movement_handler
 	
-	cmp dx, bx
-	je @@check_x_range
+	test ax, 8
+	jnz pkm_handler
 	
-	inc ax
-	inc bx
+	jmp @@exit
 
-	dec si
-	jnz @@cmp_loop
-
+pkm_handler:
+	push cx dx
+	call check_circle_intersect
+	pop dx cx
+	test ax, ax
+	jnz @@exit
+	call check_rectangle_intersect
 	jmp @@exit
 	
-@@check_x_range:
-	cmp cx, [upper_left_x]
-	jb @@exit
+movement_handler:
+	test bx, 1 ; нажата ЛКМ
+	jnz drag_handler
+	;двигаем шарик
 	
-	cmp cx, [upper_left_x] + FIELD_WIDTH
-	jae @@exit
+	cmp dx, [prev_y]
+	ja try_move_up
 	
-	jmp @@hit
+	cmp cx, [prev_x]
+	ja try_move_right
+	jmp move_ret
 	
+try_move_up:
+	inc [center_y]
+
+	call draw_filled_circle
 	
-@@check_y_range:
-	cmp dx, [upper_left_y]
-	jb @@exit
+	jmp move_ret
 	
-	cmp dx, [upper_left_y] + FIELD_HEIGHT
-	jae @@exit
+try_move_right:
+	jmp move_ret
+
+move_ret:	
+	mov [prev_x], cx
+	mov [prev_y], dx
+	jmp @@exit
 	
-	jmp @@hit
-	
-@@hit:
-	mov ax, 2
-    int 33h
-	xor ax, ax
-	mov al, [field_color]
-	call draw_rectangle
-	call change_color
-	mov ax, 1
-    int 33h
+drag_handler:
+	mov [prev_x], cx
+	mov [prev_y], dx
+	jmp @@exit
 	
 @@exit:
 	pop ds
 	retf
-	
-change_color proc
-	inc [field_color]
-	and [field_color], 1111b
-	jnz @@exit
-	inc [field_color]
-@@exit:
-	ret
-endp change_color
-
+endp mouse_handler
 end start

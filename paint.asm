@@ -1,5 +1,109 @@
 jmp main
 
+change_color proc
+	inc [field_color]
+	and [field_color], 1111b
+	jnz @@exit
+	inc [field_color]
+@@exit:
+	ret
+endp change_color
+
+change_color_circle proc
+	inc [circle_color]
+	and [circle_color], 1111b
+	jnz @@exit
+	inc [circle_color]
+@@exit:
+	ret
+endp change_color_circle
+
+draw_filled_circle proc
+	mov si, CIRCLE_RADIUS
+	mov bl, [circle_color]
+@@circle_loop:
+	mov cx, [center_x]
+	mov dx, [center_y]
+	call draw_circle
+	dec si
+	jnz @@circle_loop
+	ret
+endp draw_filled_circle
+
+draw_circle proc
+; Алгоритм рисования круга, используя только сложение, вычитание и сдвиги.
+; (упрощенный алгоритм промежуточной точки)
+; Ввод: SI = радиус, AX = номер столбца центра круга, BX = номер строки
+; центра круга
+; модифицирует DI, DX
+	push si cx dx
+	xor	di, di		; DI - относительная X-координата текущей точки
+	dec	di		    ; (SI - относительная Y-координата, начальное значение - радиус)
+	mov	ax, 1		 
+	sub	ax, si		; AX - наклон (начальное значение 1-Радиус)
+	;SI + DI = RADIUS
+@@circle_loop:
+	inc	di		    ; следующий X (начальное значение - 0)
+	cmp	di, si		; цикл продолжается, пока X <= Y
+	ja	@@exit
+
+	pop	dx		; DX = номер строки центра круга X-координата
+	pop	cx		; CX = номер столбца центра круга Y-координата
+
+	push cx dx ax
+	
+	mov al, bl
+
+	add	dx, di		; вывод восьми точек на окружности:
+	add	cx, si
+	call	draw_pixel	; центр_X + X, центр_Y + Y
+	sub	cx, si
+	sub	cx, si
+	call	draw_pixel	; центр_X + X, центр_Y - Y
+	sub	dx, di
+	sub	dx, di
+	call	draw_pixel	; центр_X - X, центр_Y - Y
+	add	cx, si
+	add	cx, si
+	call	draw_pixel	; центр_X - X, центр_Y + Y
+	sub	cx, si
+	add	cx, di
+	add	dx, di
+	add	dx, si
+	call	draw_pixel	; центр_X + Y, центр_Y + X
+	sub	cx, di
+	sub	cx, di
+	call	draw_pixel	; центр_X + X, центр_Y - X
+	sub	dx, si
+	sub	dx, si
+	call	draw_pixel	; центр_X - Y, центр_Y - X
+	add	cx, di
+	add	cx, di
+	call	draw_pixel	; центр_X - Y, центр_Y + X
+	
+	pop ax
+
+	test ax, ax		
+	js	slop_negative
+	mov	dx, di   	; если наклон положительный
+	sub	dx, si
+	shl	dx, 1
+	inc	dx
+	add	ax, dx		; наклон  = наклон + 2(X - Y) + 1
+	dec	si		    ; Y = Y - 1
+	jmp	@@circle_loop
+slop_negative:		; если наклон отрицательный
+	mov	dx, di
+	shl	dx, 1
+	inc	dx
+	add	ax, dx		; наклон = наклон + 2X + 1
+	jmp	@@circle_loop	; и Y не изменяется
+@@exit:
+	pop	dx cx si
+	ret
+	
+endp draw_circle
+
 draw_rectangle:
 ;AL = цвет
 	mov cx, LINE_WIDTH
