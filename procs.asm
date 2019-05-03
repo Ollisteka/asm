@@ -1,73 +1,113 @@
 jmp main
 
-reg_to_str: ;DI->  ->AX;
-    mov cl, 4
-rts1: 
-	cmp cl, 2
-	jne rts1_2
-	inc di
-rts1_2:
-    rol ax, 4
-    mov bl, al
-    and bl, 0Fh          ; only low-Nibble
-    add bl, 30h          ; convert to ASCII
-    cmp bl, 39h          ; above 9?
-    jna rts2
-    add bl, 7            ; "A" to "F"
-rts2: mov [di], bl         ; store ASCII in buffer
-    inc di              ; increase target address
-    dec cl              ; decrease loop counter
-    jnz rts1              ; jump if cl is not equal 0 (zeroflag is not set)
-    
-	inc di
-    ret
+str2dec_error db "Couldn't parse a number", "$"
 
+SPACE = 20h
+DISPLAY_MODE = 0449h
+ACTIVE_PAGE = 0462h
 
-append_char:
-	cmp al, CR
-	je skip_enter
-		mov [di*1], al
-		ret
-	skip_enter:
-		mov dl, 0
-		mov [di*1], dl
-		ret
-
-
-install:
-	call save_vectors
-	mov dx, offset new_09h
-	call set_vector
+wait_for_key_press:
+	xor ax,ax
+	int 16h
 	ret
 
 
-uninstall:
-	mov dx, word ptr old_09h
-	push ds
-	push word ptr old_09h + 2
-	pop ds
-	call cs:set_vector
-	pop ds
-	ret
+get_page_size:
+	read_byte_lowmem DISPLAY_MODE
+	cmp ax, 2
+	jae @@big_pages
+		mov ax, 80h
+		ret
+	
+	@@big_pages:
+		mov ax, 0100h
+		ret
 
 
-save_vectors:
+get_video_segment:
+	read_byte_lowmem DISPLAY_MODE
+	cmp al, 7
+	je @@seventh_mode
+		mov ax, 0B800h
+		ret
+	@@seventh_mode:
+		mov ax, 0B000h
+		ret
+
+read_byte_lm proc
 	push es
-
 	push 0
 	pop es
-	mov bx, word ptr es:[09h * 4] ; загружаю адрес текущего вектора прерывания (смещение)
-	mov es, word ptr es:[09h * 4 + 2] ; загружаю адрес текущего вектора прерывания (сегмент)
-	
-	mov word ptr old_09h,   bx
-    mov word ptr old_09h+2, es
+	mov al, byte ptr es:si
+	xor ah, ah
 	pop es
-	
 	ret
+endp read_byte_lm
+
+read_word_lm proc
+	;returns ax - word
+	push es
+	push 0
+	pop es
+	mov ax, word ptr es:si
+	pop es
+	ret
+endp read_word_lm
+
+
+str2dec proc ;input: si
+	push bx dx
+    xor  ax, ax
+	xor  dx, dx
+	mov  dl, 10
+
+.str2dec_loop:
+	cmp cx, 0
+	je  @@ret
+    mov bl, [si*1]
+	cmp bl, SPACE
+	je 	@@ret
+	cmp bl, '/'
+	je 	@@ret
+    sub bl, '0'
+    cmp bl, 10
+    jnb @@error
+
+    mul dl
+    add ax, bx
+    call move_pointer
+    jmp .str2dec_loop
 	
-set_vector:
-	mov ah, 25h
-	mov al, 09h
-	int SYSCALL
+@@error:
+	call_print str2dec_error
+	call_exit
+ 
+@@ret:
+    pop dx bx
+
 	ret
 
+endp str2dec	
+
+move_pointer:
+	inc si
+	dec cx
+	ret
+	
+
+skip_spaces:
+	cmp cx, 0
+	je .ex
+	xor ah, ah
+    mov al, [si*1]    ; letter
+    mov bl, SPACE
+    cmp bl, al
+    je skip_char
+	.ex:
+    ret
+
+    skip_char:
+        call move_pointer
+		cmp cx, 0
+		je .ex
+        jmp skip_spaces
