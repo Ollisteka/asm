@@ -26,7 +26,7 @@ draw_filled_circle proc
 	mov dx, [center_y]
 	call draw_circle
 	dec si
-	jnz @@circle_loop
+	;jnz @@circle_loop
 	ret
 endp draw_filled_circle
 

@@ -64,7 +64,6 @@ main:
 	call draw_rectangle
 	
 	call change_color_circle
-	
 	call draw_filled_circle
 	
 	mov ax, 1

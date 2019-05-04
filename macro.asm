@@ -26,3 +26,10 @@ call_exit macro
 	mov ah, EXIT
     int SYSCALL
 endm
+
+print_reg macro reg
+	push ax
+	mov ax, reg
+	call reg_to_str
+	pop ax
+endm 

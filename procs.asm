@@ -56,6 +56,80 @@ read_word_lm proc
 endp read_word_lm
 
 check_rectangle_intersect proc
+	call is_coord_on_rectangle
+	jz @@exit
+	
+@@hit:
+	mov ax, 2
+    int 33h
+	xor ax, ax
+	call change_color
+	mov al, [field_color]
+	call draw_rectangle
+	call draw_filled_circle
+	mov ax, 1
+    int 33h
+	
+@@exit:
+	ret
+endp check_rectangle_intersect
+
+check_circle_intersect proc
+	call is_coord_in_circle
+	jz @@exit
+
+@@hit:
+	mov ax, 2
+    int 33h
+
+	call change_color_circle
+	call draw_filled_circle
+	
+	
+	mov ax, 1
+    int 33h
+	
+	ret
+	
+@@exit:
+	xor ax, ax
+	ret
+endp check_circle_intersect
+
+is_coord_in_circle proc
+	mov si, CIRCLE_RADIUS
+	mov ax, [center_x]
+	mov bx, cx
+	call abs_diff
+	call square
+	mov cx, ax
+	
+	mov ax, [center_y]
+	mov bx, dx
+	call abs_diff
+	call square
+	
+	add cx, ax
+	
+	mov ax, CIRCLE_RADIUS
+	add ax, 5
+	call square
+	
+	cmp cx, ax
+	jae @@false
+	
+	call clear_zf
+	ret
+	
+@@false:
+	call set_zf
+	ret
+	
+
+endp
+
+
+is_coord_on_rectangle proc
 	mov si, LINE_WIDTH*2
 	mov ax, [upper_left_x]
 	mov bx, [upper_left_y]
@@ -83,79 +157,38 @@ check_rectangle_intersect proc
 	jmp @@exit
 	
 @@check_x_range:
-	cmp cx, [upper_left_x]
-	jb @@exit
-	
-	cmp cx, [upper_left_x] + FIELD_WIDTH
-	jae @@exit
+	push ax bx cx
+	mov ax, [upper_left_x]
+	mov bx, cx
+	mov cx, ax
+	add cx, FIELD_WIDTH + LINE_WIDTH
+	call is_inside
+	pop cx bx ax
+	jz @@exit
 	
 	jmp @@hit
 	
 	
 @@check_y_range:
-	cmp dx, [upper_left_y]
-	jb @@exit
-	
-	cmp dx, [upper_left_y] + FIELD_HEIGHT
-	jae @@exit
+	push ax bx cx
+	mov ax, [upper_left_y]
+	mov bx, dx
+	mov cx, ax
+	add cx, FIELD_HEIGHT + LINE_WIDTH
+	call is_inside
+	pop cx bx ax
+	jz @@exit
 	
 	jmp @@hit
 	
-@@hit:
-	mov ax, 2
-    int 33h
-	xor ax, ax
-	call change_color
-	mov al, [field_color]
-	call draw_rectangle
-	call draw_filled_circle
-	mov ax, 1
-    int 33h
-	
 @@exit:
+	call set_zf
 	ret
-endp check_rectangle_intersect
 
-check_circle_intersect proc
-	mov si, CIRCLE_RADIUS
-	mov ax, [center_x]
-	mov bx, cx
-	call abs_diff
-	call square
-	mov cx, ax
-	
-	mov ax, [center_y]
-	mov bx, dx
-	call abs_diff
-	call square
-	
-	add cx, ax
-	
-	mov ax, CIRCLE_RADIUS
-	add ax, 5
-	call square
-	
-	cmp cx, ax
-	jae @@exit
-	
-	
 @@hit:
-	mov ax, 2
-    int 33h
-
-	call change_color_circle
-	call draw_filled_circle
-	
-	
-	mov ax, 1
-    int 33h
-	
+	call clear_zf
 	ret
-	
-@@exit:
-	xor ax, ax
-	ret
-endp check_circle_intersect
+endp is_coord_on_rectangle
 
 is_inside proc
 ;AX = left edge
