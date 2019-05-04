@@ -89,7 +89,7 @@ try_move_construction proc
 	
 @@make_x_zero:
 	mov bx, [upper_left_x]
-	sub center_x, bx
+	sub [center_x], bx
 	mov [upper_left_x], 0
 	jmp @@shift_y
 	
@@ -98,7 +98,7 @@ try_move_construction proc
 	sub bx, MAX_WIDTH
 	add bx, FIELD_WIDTH
 	add bx, LINE_WIDTH
-	sub center_x, bx
+	sub [center_x], bx
 	mov [upper_left_x], MAX_WIDTH - FIELD_WIDTH - LINE_WIDTH
 	jmp @@shift_y
 	
@@ -111,21 +111,64 @@ try_move_construction proc
 	add ax, FIELD_HEIGHT + LINE_WIDTH
 	cmp ax, MAX_HEIGHT
 	jae @@make_y_max
-	jmp @@draw
+	jmp @@fix_circle
 	
 @@make_y_zero:
 	mov bx, [upper_left_y]
-	sub center_y, bx
+	sub [center_y], bx
 	mov [upper_left_y], 0
-	jmp @@draw
+	jmp @@fix_circle
 	
 @@make_y_max:
 	mov bx, [upper_left_y]
 	sub bx, MAX_HEIGHT
 	add bx, FIELD_HEIGHT
 	add bx, LINE_WIDTH
-	sub center_y, bx
+	sub [center_y], bx
 	mov [upper_left_y], MAX_HEIGHT - FIELD_HEIGHT - LINE_WIDTH
+	jmp @@fix_circle
+	
+@@fix_circle:
+	mov ax, [center_x]
+	sub ax, CIRCLE_RADIUS
+	js @@make_c_x_zero
+	
+	add ax, CIRCLE_RADIUS
+	add ax, CIRCLE_RADIUS
+	cmp ax, MAX_WIDTH
+	jae @@make_c_x_max
+	
+	mov ax, [center_y]
+	sub ax, CIRCLE_RADIUS
+	js @@make_c_y_zero
+	
+	add ax, CIRCLE_RADIUS
+	add ax, CIRCLE_RADIUS
+	cmp ax, MAX_HEIGHT
+	jae @@make_c_y_max
+	
+	jmp @@draw
+	
+@@make_c_x_zero:
+	sub [center_x], ax
+	sub [upper_left_x], ax
+	jmp @@draw
+	
+@@make_c_y_zero:
+	sub [center_y], ax
+	sub [upper_left_y], ax
+	jmp @@draw
+	
+@@make_c_x_max:
+	sub ax, MAX_WIDTH
+	sub [center_x], ax
+	sub [upper_left_x], ax
+	jmp @@draw
+	
+@@make_c_y_max:
+	sub ax, MAX_HEIGHT
+	sub [center_y], ax
+	sub [upper_left_y], ax
 	jmp @@draw
 	
 @@draw:
