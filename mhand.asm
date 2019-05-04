@@ -279,6 +279,19 @@ erase_rectangle_and_circle:
 can_move_x_axis proc
 ;ZF = 0 <=> can
 ;BX = possible Xcoord
+	push bx
+	sub bx, CIRCLE_RADIUS
+	cmp bx, 0
+	pop bx
+	jl @@false
+	
+	push bx
+	add bx, CIRCLE_RADIUS
+	cmp bx, MAX_WIDTH
+	pop bx
+	jg @@false
+
+
 	mov ax, [upper_left_x]
 	add ax, LINE_WIDTH/2
 	
@@ -313,6 +326,18 @@ endp can_move_x_axis
 can_move_y_axis proc
 ;ZF = 0 <=> can
 ;BX = possible Ycoord
+
+	push bx
+	sub bx, CIRCLE_RADIUS
+	cmp bx, 0
+	pop bx
+	jl @@false
+	
+	push bx
+	add bx, CIRCLE_RADIUS
+	cmp bx, MAX_HEIGHT
+	pop bx
+	jg @@false
 
 	mov ax, [upper_left_y]
 	add ax, LINE_WIDTH/2
