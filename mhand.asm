@@ -57,7 +57,8 @@ try_move_construction proc
 	push cx dx
 	call is_coord_in_circle
 	pop dx cx
-	jz @@exit
+	jnz @@try_move
+	jmp @@exit
 	
 @@try_move:
 	call hide_cursor
@@ -76,6 +77,7 @@ try_move_construction proc
 	sub cx, ax ;X_offset, can be negative
 	sub dx, bx
 	
+	add [center_x], cx
 	add [upper_left_x], cx
 	js @@make_x_zero
 	mov ax, [upper_left_x]
@@ -86,15 +88,23 @@ try_move_construction proc
 	jmp @@shift_y
 	
 @@make_x_zero:
+	mov bx, [upper_left_x]
+	sub center_x, bx
 	mov [upper_left_x], 0
 	jmp @@shift_y
 	
 @@make_x_max:
+	mov bx, [upper_left_x]
+	sub bx, MAX_WIDTH
+	add bx, FIELD_WIDTH
+	add bx, LINE_WIDTH
+	sub center_x, bx
 	mov [upper_left_x], MAX_WIDTH - FIELD_WIDTH - LINE_WIDTH
 	jmp @@shift_y
 	
 
 @@shift_y:
+	add [center_y], dx
 	add [upper_left_y], dx
 	js  @@make_y_zero
 	mov ax, [upper_left_y]
@@ -104,10 +114,17 @@ try_move_construction proc
 	jmp @@draw
 	
 @@make_y_zero:
+	mov bx, [upper_left_y]
+	sub center_y, bx
 	mov [upper_left_y], 0
 	jmp @@draw
 	
 @@make_y_max:
+	mov bx, [upper_left_y]
+	sub bx, MAX_HEIGHT
+	add bx, FIELD_HEIGHT
+	add bx, LINE_WIDTH
+	sub center_y, bx
 	mov [upper_left_y], MAX_HEIGHT - FIELD_HEIGHT - LINE_WIDTH
 	jmp @@draw
 	
