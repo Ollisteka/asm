@@ -5,9 +5,12 @@ ORG 100h
 locals @@
 
 start:
-	include procs.asm
 	include macro.asm
+	include procs.asm
 	include paint.asm
+	include mhand.asm
+	
+output db 4 dup(0), 20h, '$'
 	
 mode_num		db 0
 page_num		db 0
@@ -15,8 +18,8 @@ page_num		db 0
 field_color		db 1
 circle_color    db 2
 
-upper_left_x   dw 150
-upper_left_y   dw 115
+upper_left_x   dw 150d
+upper_left_y   dw 115d
 
 center_x	   dw  ?
 center_y	   dw  ?
@@ -25,15 +28,17 @@ prev_x 		dw ?
 prev_y 		dw ?
 
 VIDEO_SEG = 0A000h
-MAX_WIDTH = 640
-MAX_HEIGHT = 350
+MAX_WIDTH = 640d
+MAX_HEIGHT = 350d
 
-LINE_WIDTH = 5
+LINE_WIDTH = 5d
 
-FIELD_WIDTH = 325
-FIELD_HEIGHT = 125
+FIELD_WIDTH = 80d
+FIELD_HEIGHT = 30d
 
-CIRCLE_RADIUS = 20
+CIRCLE_RADIUS = 20d
+
+
 
 main:
 	read_byte_lowmem ACTIVE_PAGE
@@ -54,8 +59,8 @@ main:
 	add ax, FIELD_HEIGHT / 2
 	mov [center_y], ax
 	
-	mov al, [field_color]
 	call change_color
+	mov al, [field_color]
 	call draw_rectangle
 	
 	call change_color_circle
@@ -113,67 +118,4 @@ add_mouse_handler:
     int         33h
 	ret
 
-	
-mouse_handler proc
-;АХ = условие вызова
-;ВХ = состояние кнопок
-;СХ, DX — X- и Y-координаты курсора
-;SI, DI — счетчики последнего перемещения по горизонтали и вертикали (единицы измерения для этих счетчиков — мики, 1/200 дюйма)
-;DS — сегмент данных драйвера мыши
-	push ds cs
-	pop ds
-	
-	test ax, 1
-	;jnz movement_handler
-	
-	test ax, 8
-	jnz pkm_handler
-	
-	jmp @@exit
-
-pkm_handler:
-	push cx dx
-	call check_circle_intersect
-	pop dx cx
-	test ax, ax
-	jnz @@exit
-	call check_rectangle_intersect
-	jmp @@exit
-	
-movement_handler:
-	test bx, 1 ; нажата ЛКМ
-	jnz drag_handler
-	;двигаем шарик
-	
-	cmp dx, [prev_y]
-	ja try_move_up
-	
-	cmp cx, [prev_x]
-	ja try_move_right
-	jmp move_ret
-	
-try_move_up:
-	inc [center_y]
-
-	call draw_filled_circle
-	
-	jmp move_ret
-	
-try_move_right:
-	jmp move_ret
-
-move_ret:	
-	mov [prev_x], cx
-	mov [prev_y], dx
-	jmp @@exit
-	
-drag_handler:
-	mov [prev_x], cx
-	mov [prev_y], dx
-	jmp @@exit
-	
-@@exit:
-	pop ds
-	retf
-endp mouse_handler
 end start

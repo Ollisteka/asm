@@ -63,14 +63,14 @@ check_rectangle_intersect proc
 @@cmp_loop:
 	cmp si, LINE_WIDTH
 	jne @@cont
-	add ax, FIELD_WIDTH
-	add bx, FIELD_HEIGHT
+	add ax, FIELD_WIDTH - LINE_WIDTH
+	add bx, FIELD_HEIGHT - LINE_WIDTH
 	
 @@cont:
-	;Mouse_X-coord == Line_X-coord
+	;Mouse_X-coord == Line_X-coord	
 	cmp cx, ax
 	je @@check_y_range
-	
+
 	cmp dx, bx
 	je @@check_x_range
 	
@@ -105,9 +105,9 @@ check_rectangle_intersect proc
 	mov ax, 2
     int 33h
 	xor ax, ax
+	call change_color
 	mov al, [field_color]
 	call draw_rectangle
-	call change_color
 	call draw_filled_circle
 	mov ax, 1
     int 33h
@@ -156,3 +156,66 @@ check_circle_intersect proc
 	xor ax, ax
 	ret
 endp check_circle_intersect
+
+is_inside proc
+;AX = left edge
+;BX = x
+;CX = right edge
+
+;ZF = 0 <=> ax <= bx <= cx
+	cmp ax, bx
+	ja @@false ; ax > bx
+	cmp bx, cx
+	ja @@false
+
+	call clear_zf
+	ret
+
+@@false:
+	call set_zf
+	ret
+endp is_inside
+
+clear_zf:
+	push dx
+	mov dx, 1
+	test dx, dx ;clear ZF
+	pop dx
+	ret
+	
+set_zf:
+	push dx
+	xor dx, dx
+	test dx, dx ;clear ZF
+	pop dx
+	ret
+
+reg_to_str: ;->AX
+	push ax bx cx dx
+    mov di, offset output
+    mov cl, 4
+rts1: rol ax, 4
+    mov bl, al
+    and bl, 0Fh          ; only low-Nibble
+    add bl, 30h          ; convert to ASCII
+    cmp bl, 39h          ; above 9?
+    jna rts2
+    add bl, 7            ; "A" to "F"
+rts2: mov [di], bl         ; store ASCII in buffer
+    inc di              ; increase target address
+    dec cl              ; decrease loop counter
+    jnz rts1              ; jump if cl is not equal 0 (zeroflag is not set)
+
+    call_print output
+	pop dx cx bx ax
+    ret
+	
+show_cursor:
+	mov ax, 1
+	int 33h
+	ret
+	
+hide_cursor:
+	mov ax, 2
+	int 33h
+	ret

@@ -122,7 +122,7 @@ draw_rectangle:
 	
 	mov cx, LINE_WIDTH
 	mov bx, [upper_left_x]
-	add bx, FIELD_WIDTH - LINE_WIDTH
+	add bx, FIELD_WIDTH
 	call draw_fat_vert_line
 	
 	ret
@@ -160,7 +160,7 @@ jmp @@skip_first_increment
 	inc bx
 @@skip_first_increment:
 	push cx
-	mov cx, FIELD_HEIGHT
+	mov cx, FIELD_HEIGHT + LINE_WIDTH
 	mov dx, [upper_left_y]
 	call vertical_line
 	pop cx
@@ -196,15 +196,40 @@ fill_row:
 	jnz next_line
 	ret
 	
+draw_black_circle:
+	mov al, [circle_color]
+	push ax
+	
+	mov [circle_color], 0
+	call draw_filled_circle
+	
+	pop ax
+	mov [circle_color], al
+	
+	ret
+	
 	
 draw_pixel:
 ;BH = номер страницы = 0
-;DX = номер строки
 ;СХ = номер столбца
+;DX = номер строки
 ;AL = цвет
     push bx
 	xor bx, bx
     mov  ah, 0Ch
+    int  10h
+	pop bx
+	ret
+	
+get_pixel:
+;BH = номер страницы = 0
+;СХ = номер столбца
+;DX = номер строки
+;Выход:
+;AL = цвет
+    push bx
+	xor bx, bx
+    mov  ah, 0Dh
     int  10h
 	pop bx
 	ret
