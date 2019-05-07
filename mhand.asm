@@ -1,5 +1,7 @@
 jmp main
 
+CIRCLE_OFFSET = 3
+
 mouse_handler proc
 ;АХ = условие вызова
 ;ВХ = состояние кнопок
@@ -25,18 +27,6 @@ pkm_handler:
 	jnz @@exit
 	call check_rectangle_intersect
 	jmp @@exit
-	
-	
-;;;;;
-drag_handler:
-	call try_move_construction
-	pop ds
-	retf
-	
-@@exit:
-	pop ds
-	retf
-
 
 ;;;;;
 movement_handler:
@@ -44,6 +34,14 @@ movement_handler:
 	jnz drag_handler
 
 	call try_move_circle
+	jmp @@exit
+	
+;;;;;
+drag_handler:
+	call try_move_construction
+	jmp @@exit
+	
+@@exit:
 	pop ds
 	retf
 	
@@ -51,10 +49,14 @@ endp mouse_handler
 
 try_move_construction proc
 	push cx dx
+	mov cx, [prev_x]
+	mov dx, [prev_y]
 	call is_coord_on_rectangle
 	pop dx cx
 	jnz @@try_move
 	push cx dx
+	mov cx, [prev_x]
+	mov dx, [prev_y]
 	call is_coord_in_circle
 	pop dx cx
 	jnz @@try_move
@@ -65,8 +67,7 @@ try_move_construction proc
 	
 	push cx dx
 	call erase_rectangle_and_circle
-	pop dx cx
-	
+	pop dx cx	
 	
 	mov ax, [prev_x]
 	mov bx, [prev_y]
@@ -185,7 +186,6 @@ endp try_move_construction
 
 
 try_move_circle proc
-	
 	;двигаем шарик
 	
 	cmp dx, [prev_y]
@@ -206,56 +206,58 @@ try_move_circle proc
 	mov [prev_x], cx
 	mov [prev_y], dx
 	mov bx, [center_y]
-	inc bx
+	add bx, CIRCLE_OFFSET
 	call can_move_y_axis
 	jz @@exit
 	
 	@@can_move_down:
 		call erase_circle
-		inc [center_y]	
+		add [center_y], CIRCLE_OFFSET	
 		jmp @@repaint_circle
 	
 @@try_move_up:
 	mov [prev_x], cx
 	mov [prev_y], dx
 	mov bx, [center_y]
-	dec bx
+	sub bx, CIRCLE_OFFSET
 	call can_move_y_axis
 	jz @@exit
 
 	@@can_move_up:
 		call erase_circle
-		dec [center_y]	
+		sub [center_y], CIRCLE_OFFSET
 		jmp @@repaint_circle
 	
 @@try_move_right:
 	mov [prev_x], cx
 	mov [prev_y], dx
 	mov bx, [center_x]
-	inc bx
+	add bx, CIRCLE_OFFSET
 	call can_move_x_axis
 	jz @@exit
 		
 	@@can_move_right:
 		call erase_circle
-		inc [center_x]
+		add [center_x], CIRCLE_OFFSET
 		jmp @@repaint_circle
 		
 @@try_move_left:
 	mov [prev_x], cx
 	mov [prev_y], dx
 	mov bx, [center_x]
-	dec bx
+	sub bx, CIRCLE_OFFSET
     call can_move_x_axis
 	jz @@exit
 		
 	@@can_move_left:
 		call erase_circle
-		dec [center_x]
+		sub [center_x], CIRCLE_OFFSET
 		jmp @@repaint_circle
 	
 @@repaint_circle:
+	call hide_cursor
 	call draw_filled_circle
+	call show_cursor
 
 @@exit:	
 	ret
@@ -263,6 +265,7 @@ endp try_move_circle
 
 
 erase_circle:
+	call hide_cursor
 	call draw_black_circle
 	mov al, [field_color]
 	call draw_rectangle
@@ -270,10 +273,11 @@ erase_circle:
 	ret
 	
 erase_rectangle_and_circle:
+	call hide_cursor
 	call draw_black_circle
 	mov al, 0
 	call draw_rectangle
-
+	call show_cursor
 	ret
 
 can_move_x_axis proc

@@ -124,7 +124,6 @@ is_coord_in_circle proc
 @@false:
 	call set_zf
 	ret
-	
 
 endp
 
@@ -244,11 +243,15 @@ rts2: mov [di], bl         ; store ASCII in buffer
     ret
 	
 show_cursor:
+	push ax
 	mov ax, 1
 	int 33h
+	pop ax
 	ret
 	
 hide_cursor:
+	push ax
 	mov ax, 2
 	int 33h
+	pop ax
 	ret
