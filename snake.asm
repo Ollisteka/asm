@@ -35,6 +35,14 @@ model tiny
 	self_cross_modes db 1 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
 	
 	output db 4 dup(0), 20h, '$'
+	
+	stat_snake_length		db 'Snake length:              '
+	stat_snake_length_len	= $ - stat_snake_length
+	stat_max_snake_length	db '      Record:              '
+	stat_max_snake_length_len = $ - stat_max_snake_length
+	stat_food_eaten			db '  Food eaten:              '
+	stat_food_eaten_len		= $ - stat_food_eaten
+	
 
 .code
 ORG 100h
@@ -147,6 +155,7 @@ main:
 
 
 @@exit:
+	call print_length
 	mov ah, 05h
 	mov al, 02h
 	int 10h
@@ -166,6 +175,28 @@ init_snake proc
 		inc al
 		loop @@loop
 	ret
-
 endp init_snake
+
+print_length proc
+	mov si, offset stat_snake_length
+	mov cx, offset stat_snake_length_len
+	mov bh, 2
+	mov bl, 010b
+	mov dh, 10
+	mov dl, 15
+	call put_str
+	
+	inc dh
+	mov dl, 15
+	mov si, offset stat_max_snake_length
+	mov cx, offset stat_max_snake_length_len
+	call put_str
+	
+	inc dh
+	mov dl, 15
+	mov si, offset stat_food_eaten
+	mov cx, offset stat_food_eaten_len
+	call put_str
+	ret
+endp print_length
 end start

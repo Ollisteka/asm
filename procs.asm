@@ -100,12 +100,27 @@ put_char:
 ;BL - attribute
 ;BH - page
 	push bx cx
-	;mov bh, 0 ; страница
 	mov cx, 1 ; число повторений
 	mov ah, 09h
 	int 10h
 	pop cx bx
 	ret
+	
+put_str proc
+;SI = string
+;CX = length
+;BH = page
+;BL = attribute
+;DX = coords
+@@print_char:
+	call move_cursor
+	mov al, [si*1]
+	call put_char
+	inc si
+	inc dl
+	loop @@print_char
+	ret
+endp put_str
 	
 reg_to_str: ;->AX
 	push ax bx cx dx
