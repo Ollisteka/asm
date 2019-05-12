@@ -68,6 +68,7 @@ put_char_at_coord:
 ; BL - attribute
 ; DH - row
 ; DL - column
+; BH - page
 	call move_cursor
 	call put_char
 	call hide_cursor
@@ -97,8 +98,9 @@ get_char:
 put_char:
 ;AL - ASCII code
 ;BL - attribute
+;BH - page
 	push bx cx
-	mov bh, 0 ; страница
+	;mov bh, 0 ; страница
 	mov cx, 1 ; число повторений
 	mov ah, 09h
 	int 10h

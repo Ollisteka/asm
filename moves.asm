@@ -7,6 +7,9 @@ move_snake proc
 	
 	cmp dl, 0
 	je @@teleport_wall
+	
+	cmp dh, FIELD_HEIGHT-1
+	je @@death_wall
 
 @@simple:
 	call remove_tail
@@ -21,6 +24,10 @@ move_snake proc
 @@teleport_wall:
 	mov dl, FIELD_WIDTH-2
 	jmp @@simple
+	
+@@death_wall:
+	or [flags], 10b
+	jmp @@exit
 
 @@exit:
 	;mov si, [prev_head]
@@ -46,6 +53,7 @@ repaint_head_and_tail proc
 
 	call get_prev_head	
 	mov bl, 0001010b
+	
 	call put_char_at_coord
 	
 	call get_tail
@@ -128,6 +136,7 @@ remove_tail proc
 @@erase_tail:
 	mov al, ' '
 	mov bl, 0
+	mov bh, 0
 	call put_char_at_coord
 
 @@change_tail_pos:
@@ -152,6 +161,7 @@ endp is_intersected
 
 move_head proc
 ;DX = next coords
+	mov bh, 0
 	cmp self_cross_modes, 1
 	je @@self_cross_will_cut
 	
