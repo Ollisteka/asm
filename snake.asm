@@ -12,16 +12,18 @@ model tiny
 	RIGHT_ARROW = 4Dh
 	
 	SWAP_WALL = 1Dh
+	TELEPORT_WALL = 11h
+	SNAKE_CHAR = '*'
 	
 	;MAX_SNAKE_LEN = (FIELD_WIDTH - 15)*(FIELD_HEIGHT - 10)
 	MAX_SNAKE_LEN = (FIELD_WIDTH - 2)*(FIELD_HEIGHT - 2)
-	;MAX_SNAKE_LEN = 5
+	;MAX_SNAKE_LEN = 128
 	
 	mode_num		db 0
 	page_num		db 0
 	
 	snake dw MAX_SNAKE_LEN dup(0) ; координаты?
-	snake_init_length db 5
+	snake_init_length db 20
 	
 	
 	prev_head dw 0
@@ -46,8 +48,10 @@ main:
 	call_save_screen_state
 	
 	xor ax, ax
-	mov [head], 5
-	mov [prev_head], 4
+	mov al, [snake_init_length]
+	mov [head], ax
+	dec al
+	mov [prev_head], ax
 	
 	mov ah, 00h
 	mov al, 2
@@ -59,7 +63,9 @@ main:
 	
 	call init_snake
 	call draw_full_snake
+	mov bl, 101b
 	call draw_swap_wall
+	call draw_teleport_wall
 	
 @@loop:
 	call wait_for_key_press
@@ -130,7 +136,7 @@ draw_full_snake proc
 	@@loop:
 		lodsw
 		mov dx, ax
-		mov al, '*';178
+		mov al, SNAKE_CHAR
 		cmp cl, 1
 		ja @@not_head
 			mov bl, 0001010b
@@ -145,8 +151,24 @@ endp draw_full_snake
 draw_swap_wall proc
 	mov al, SWAP_WALL
 	mov cx, FIELD_HEIGHT
-	mov dh, 0 ;row
 	mov dl, FIELD_WIDTH-1
+	call draw_vert_wall
+	ret
+endp draw_swap_wall
+
+draw_teleport_wall proc
+	mov al, TELEPORT_WALL
+	mov cx, FIELD_HEIGHT
+	mov dl, 0
+	call draw_vert_wall
+	ret
+endp draw_teleport_wall
+
+draw_vert_wall proc
+;AL = char
+;CX = length
+;DL = column
+	mov dh, 0 ;row
 	@@loop:
 		push cx
 		call put_char_at_coord
@@ -154,7 +176,7 @@ draw_swap_wall proc
 		inc dh
 		loop @@loop
 	ret
-endp draw_swap_wall
+endp draw_vert_wall
 
 endp init_snake
 end start

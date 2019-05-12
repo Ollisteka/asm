@@ -2,10 +2,13 @@ jmp main
 
 move_snake proc
 ;DX = next coords
-;check for swap wall
 	cmp dl, FIELD_WIDTH-1
 	je @@swap_wall
+	
+	cmp dl, 0
+	je @@teleport_wall
 
+@@simple:
 	call remove_tail
 	call move_head
 	jmp @@exit
@@ -14,23 +17,38 @@ move_snake proc
 	call swap
 	call repaint_head_and_tail
 	jmp @@exit
+	
+@@teleport_wall:
+	mov dl, FIELD_WIDTH-2
+	jmp @@simple
 
 @@exit:
+	;mov si, [prev_head]
+	;print_reg si
+	;mov si, [tail]
+	;print_reg si
+
+	;call get_prev_head
+	;print_reg dx
+	;call get_tail
+	;print_reg dx
 	ret
 endp move_snake
 
+teleport proc
+	ret
+endp teleport
+
 
 repaint_head_and_tail proc
-	mov al, '*';178
-	mov bx, [prev_head]
-	shl bx, 1
-	mov dx, snake[bx]
+	mov al, SNAKE_CHAR
+	xor bx, bx
+
+	call get_prev_head	
 	mov bl, 0001010b
 	call put_char_at_coord
 	
-	mov bx, [tail]
-	shl bx, 1
-	mov dx, snake[bx]
+	call get_tail
 	mov bl, 010b
 	call put_char_at_coord
 	ret
@@ -57,20 +75,22 @@ endp get_snake_length
 swap proc
 	mov ax, [tail]
 	mov bx, [prev_head]
-	;mov cx, [head]
+
 	mov [prev_head], ax
 	mov [tail], bx
+
 	test [flags], 1
 	jnz @@head_was_decrementing
 
 	;;head was incrementing
 	or [flags], 1
-	cmp [prev_head], 1
-	jae @@simple_swap
+	cmp [prev_head], 0
+	jne @@2
 		mov [head], MAX_SNAKE_LEN-1
-	jmp @@exit
-	
-	@@simple_swap:
+		jmp @@exit
+
+	@@2:
+		mov ax, [prev_head]
 		dec ax
 		mov [head], ax
 		jmp @@exit
@@ -83,6 +103,7 @@ swap proc
 		jmp @@exit
 	
 	@@1:
+		mov ax, [prev_head]
 		inc ax
 		mov [head], ax
 		jmp @@exit
@@ -96,34 +117,35 @@ remove_tail proc
 	mov si, [tail]
 	shl si, 1
 	mov dx, snake[si]
+	mov snake[si], 0
+	call is_intersected
+	jz @@change_tail_pos
 	mov al, ' '
 	mov bl, 0
 	call put_char_at_coord ;todo в режиме самоперечения не стирать!
+@@change_tail_pos:
 	call change_tail_pos
 	pop dx bx ax
 	ret
 endp remove_tail
 
-get_prev_head proc
-	push bx
-	mov si, [prev_head]
-	shl si, 1
-	mov dx, snake[si]
-	pop bx
+is_intersected proc
+	;DX = tail coords
+	push ax
+	mov ax, dx
+	mov di, offset snake
+	mov cx, MAX_SNAKE_LEN
+	repne scasw
+	pop ax
 	ret
-endp get_prev_head
-
+endp is_intersected
 
 move_head proc
-;DX = next coords	
-	cmp dl, 18h
-	jne @@cont
-	nop
-@@cont:
+;DX = next coords
 	mov si, [head]
 	shl si, 1
 	mov snake[si], dx
-	mov al, '*';178
+	mov al, SNAKE_CHAR
 	mov bl, 0001010b
 	call put_char_at_coord
 

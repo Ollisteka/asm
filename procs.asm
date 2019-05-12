@@ -3,6 +3,21 @@ jmp main
 COLUMN_NUM_LM = 044ah
 ROWS_NUM_LM = 0484h
 
+get_prev_head proc
+	get_snake_coord prev_head
+	ret
+endp get_prev_head
+
+get_head proc
+	get_snake_coord head
+	ret
+endp get_head
+
+get_tail proc
+	get_snake_coord tail
+	ret
+endp get_tail
+
 read_byte_lm proc
 	push es
 	push 0
@@ -32,8 +47,8 @@ hide_cursor:
 	push bx dx
 	xor bx, bx
 	xor dx, dx
-	mov dh, 25
-	;mov dl, 14
+	mov dh, 1
+	mov dl, 1
 	call move_cursor
 	pop dx bx
 	ret
@@ -56,6 +71,27 @@ put_char_at_coord:
 	call move_cursor
 	call put_char
 	call hide_cursor
+	ret
+	
+get_char_at_coord:
+;RETURNS:
+; AH - attribute
+; AL - ASCII code
+;IN:
+; DH - row
+; DL - column
+	call move_cursor
+	call get_char
+	call hide_cursor
+	ret
+	
+get_char:
+	push bx
+	xor ax, ax
+	mov ah, 08h
+	mov bh, 0
+	int 10h
+	pop bx
 	ret
 	
 put_char:

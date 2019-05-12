@@ -37,6 +37,14 @@ call_exit macro
     int SYSCALL
 endm
 
+get_snake_coord macro pointer
+	push bx
+	mov bx, [pointer]
+	shl bx, 1
+	mov dx, snake[bx]
+	pop bx
+endm
+
 print_reg macro reg
 	push ax
 	mov ax, reg
