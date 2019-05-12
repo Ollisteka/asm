@@ -44,7 +44,7 @@ start:
 	include macro.asm
 	include procs.asm
 	include moves.asm
-	
+	include paint.asm
 
 main:
 	call_save_screen_state
@@ -64,6 +64,7 @@ main:
 	int 10h
 	
 	call init_pause
+	call init_game_over
 	mov bh, 0
 	call init_snake
 	call draw_full_snake
@@ -142,11 +143,14 @@ main:
 		mov ah, 05h
 		mov al, 01h
 		int 10h
-		;call init_pause
 		jmp @@loop
 
 
 @@exit:
+	mov ah, 05h
+	mov al, 02h
+	int 10h
+	call wait_for_key_press
 	call_restore_screen_state
 	call_exit
 
@@ -162,117 +166,6 @@ init_snake proc
 		inc al
 		loop @@loop
 	ret
-
-	
-draw_full_snake proc
-	mov si, offset snake
-	xor cx, cx
-	mov cl, [snake_init_length]
-	mov bl, 010b
-	@@loop:
-		lodsw
-		mov dx, ax
-		mov al, SNAKE_CHAR
-		cmp cl, 1
-		ja @@not_head
-			mov bl, 0001010b
-	@@not_head:
-		push cx
-		call put_char_at_coord
-		pop cx
-		loop @@loop
-	ret
-endp draw_full_snake
-
-draw_swap_wall proc
-	mov al, SWAP_WALL
-	mov cx, FIELD_HEIGHT
-	mov dl, FIELD_WIDTH-1
-	mov dh, 0 ;row
-	call draw_vert_wall
-	ret
-endp draw_swap_wall
-
-draw_teleport_wall proc
-	mov al, TELEPORT_WALL
-	mov cx, FIELD_HEIGHT
-	mov dl, 0
-	mov dh, 0 ;row
-	call draw_vert_wall
-	ret
-endp draw_teleport_wall
-
-draw_death_wall proc
-	mov al, DEATH_WALL
-	mov cx, FIELD_WIDTH-1
-	mov dh, FIELD_HEIGHT-1
-	call draw_hor_wall
-	ret
-endp draw_death_wall
-
-init_pause proc
-	mov al, 0B1h
-	mov bl, 1100b
-	mov bh, 1
-	mov cx, 5
-
-	mov dl, (FIELD_WIDTH-1)/2 - 6
-	mov dh, 5
-	@@draw:
-		push cx
-		mov cx, 15
-		push dx
-		call draw_vert_wall
-		pop dx
-		inc dl
-		pop cx
-		loop @@draw
-		
-	mov cx, 5
-	mov dl, (FIELD_WIDTH-1)/2 + 6
-	mov dh, 5
-	@@right:
-		push cx
-		mov cx, 15
-		push dx
-		call draw_vert_wall
-		pop dx
-		inc dl
-		pop cx
-		loop @@right
-		
-	mov dh, 51
-	call move_cursor
-	ret
-endp init_pause
-
-draw_vert_wall proc
-;AL = char
-;CX = length
-;DL = column	
-;DH = row
-	@@loop:
-		push cx
-		call put_char_at_coord
-		pop cx
-		inc dh
-		loop @@loop
-	ret
-endp draw_vert_wall
-
-draw_hor_wall proc
-;AL = char
-;CX = length
-;DH = row
-	mov dl, 0 ;column
-	@@loop:
-		push cx
-		call put_char_at_coord
-		pop cx
-		inc dl
-		loop @@loop
-	ret
-endp draw_hor_wall
 
 endp init_snake
 end start
