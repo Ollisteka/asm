@@ -11,6 +11,8 @@ model tiny
 	LEFT_ARROW = 4Bh
 	RIGHT_ARROW = 4Dh
 	
+	SWAP_WALL = 1Dh
+	
 	;MAX_SNAKE_LEN = (FIELD_WIDTH - 15)*(FIELD_HEIGHT - 10)
 	MAX_SNAKE_LEN = (FIELD_WIDTH - 2)*(FIELD_HEIGHT - 2)
 	;MAX_SNAKE_LEN = 5
@@ -26,6 +28,8 @@ model tiny
 	head dw 0
 	tail dw 0
 	
+	flags db 0 ; X|X|X|X|X|X|X|DEC\INC tail
+	
 	output db 4 dup(0), 20h, '$'
 
 .code
@@ -35,6 +39,7 @@ locals @@
 start:
 	include macro.asm
 	include procs.asm
+	include moves.asm
 	
 
 main:
@@ -54,6 +59,7 @@ main:
 	
 	call init_snake
 	call draw_full_snake
+	call draw_swap_wall
 	
 @@loop:
 	call wait_for_key_press
@@ -102,79 +108,7 @@ main:
 @@exit:
 	call_restore_screen_state
 	call_exit
-	
-move_snake proc
-	call remove_tail
-	call move_head
-	ret
-endp move_snake
 
-remove_tail proc
-	push ax bx dx
-	mov si, [tail]
-	shl si, 1
-	mov dx, snake[si]
-	mov al, ' '
-	mov bl, 0
-	call put_char_at_coord ;todo в режиме самоперечения не стирать!
-	call inc_tail
-	pop dx bx ax
-	ret
-endp remove_tail
-
-get_prev_head proc
-	push bx
-	mov si, [prev_head]
-	shl si, 1
-	mov dx, snake[si]
-	pop bx
-	ret
-endp get_prev_head
-
-
-move_head proc
-;DX = next coords	
-	cmp dl, 18h
-	jne @@cont
-	nop
-@@cont:
-	mov si, [head]
-	shl si, 1
-	mov snake[si], dx
-	mov al, '*';178
-	mov bl, 0001010b
-	call put_char_at_coord
-
-	call get_prev_head
-	mov bl, 010b
-	call put_char_at_coord
-	
-	call inc_head
-	ret
-endp move_head
-
-inc_head proc
-	push bx
-	mov bx, [head]
-	print_reg bx
-	mov [prev_head], bx
-    inc [head]
-	cmp [head], MAX_SNAKE_LEN
-	jb @@exit
-		mov [head], 0
-@@exit:
-	pop bx
-	ret
-endp inc_head
-
-inc_tail proc
-	inc [tail]
-	cmp [tail], MAX_SNAKE_LEN
-	jb @@exit
-		mov [tail], 0
-@@exit:
-	ret
-endp inc_tail
 	
 init_snake proc
 	mov di, offset snake
@@ -207,6 +141,20 @@ draw_full_snake proc
 		loop @@loop
 	ret
 endp draw_full_snake
+
+draw_swap_wall proc
+	mov al, SWAP_WALL
+	mov cx, FIELD_HEIGHT
+	mov dh, 0 ;row
+	mov dl, FIELD_WIDTH-1
+	@@loop:
+		push cx
+		call put_char_at_coord
+		pop cx
+		inc dh
+		loop @@loop
+	ret
+endp draw_swap_wall
 
 endp init_snake
 end start

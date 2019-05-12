@@ -32,8 +32,8 @@ hide_cursor:
 	push bx dx
 	xor bx, bx
 	xor dx, dx
-	mov dh, 14
-	mov dl, 14
+	mov dh, 25
+	;mov dl, 14
 	call move_cursor
 	pop dx bx
 	ret
