@@ -23,14 +23,15 @@ model tiny
 	page_num		db 0
 	
 	snake dw MAX_SNAKE_LEN dup(0) ; координаты?
-	snake_init_length db 20
+	snake_init_length db 18
 	
 	
 	prev_head dw 0
 	head dw 0
 	tail dw 0
 	
-	flags db 0 ; X|X|X|X|X|X|X|DEC\INC tail
+	flags db 0 ; X|X|X|X|X|X|DEAD|DEC\INC tail
+	self_cross_modes db 1 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
 	
 	output db 4 dup(0), 20h, '$'
 
@@ -68,6 +69,10 @@ main:
 	call draw_teleport_wall
 	
 @@loop:
+	mov al, [flags]
+	and al, 10b
+	jnz @@exit ;DEAD
+
 	call wait_for_key_press
 	cmp ah, 01
 	je @@exit

@@ -118,11 +118,18 @@ remove_tail proc
 	shl si, 1
 	mov dx, snake[si]
 	mov snake[si], 0
+	
+	test cx, cx
+	jz @@erase_tail
+
 	call is_intersected
 	jz @@change_tail_pos
+	
+@@erase_tail:
 	mov al, ' '
 	mov bl, 0
-	call put_char_at_coord ;todo в режиме самоперечения не стирать!
+	call put_char_at_coord
+
 @@change_tail_pos:
 	call change_tail_pos
 	pop dx bx ax
@@ -130,6 +137,9 @@ remove_tail proc
 endp remove_tail
 
 is_intersected proc
+;RETURNS
+;Z=1 iff intersection
+;if Z=1, CX = idx of intersected cell
 	;DX = tail coords
 	push ax
 	mov ax, dx
@@ -142,6 +152,13 @@ endp is_intersected
 
 move_head proc
 ;DX = next coords
+	cmp self_cross_modes, 1
+	je @@self_cross_will_cut
+	
+	cmp self_cross_modes, 2
+	je @@self_cross_is_deadly
+
+@@move:
 	mov si, [head]
 	shl si, 1
 	mov snake[si], dx
@@ -154,7 +171,41 @@ move_head proc
 	call put_char_at_coord
 	
 	call change_head_pos
+@@exit:
 	ret
+	
+@@self_cross_will_cut:
+
+	call is_intersected
+	jnz @@move
+	
+	xor bx, bx
+
+	@@clear_tail:
+		test bx, bx
+		jnz @@move
+		;push bx
+		push dx
+		call get_tail
+		mov ax, dx
+		pop dx
+	
+		cmp dx, ax
+		jne @@cont
+		mov bx, 1
+		@@cont:
+		xor cx, cx
+		call remove_tail
+		;pop bx
+		jmp @@clear_tail
+		
+	jmp @@move
+	
+@@self_cross_is_deadly:
+	call is_intersected
+	jnz @@move
+	or flags, 10b
+	jmp @@exit
 endp move_head
 
 change_head_pos proc
@@ -165,6 +216,7 @@ change_head_pos proc
 @@inc_head:
 	call inc_head
 	ret
+
 endp change_head_pos
 
 change_tail_pos proc
