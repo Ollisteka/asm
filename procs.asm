@@ -147,9 +147,7 @@ clear_byte_buff proc
 ;SI - buffer
 ;CX - length
 	push ax
-	mov di, offset output
-	mov cx, output_len
-	dec cx
+	
 	mov ax, 20h
 	rep stosb
 	pop ax
@@ -159,6 +157,11 @@ endp clear_byte_buff
 num_to_str proc
 ;AX - num
 push bx cx dx
+mov di, offset output
+mov cx, output_len
+dec cx
+	
+call clear_byte_buff
 mov di, offset output
 mov cx, 10
 xor bx, bx

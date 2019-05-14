@@ -25,6 +25,7 @@ model tiny
 	
 	snake dw MAX_SNAKE_LEN dup(0) ; координаты?
 	snake_init_length db 18
+	snake_length_record dw 0
 	
 	
 	prev_head dw 0
@@ -58,12 +59,15 @@ start:
 main:
 	call_save_screen_state
 	
+@@new_game:
+	mov [flags], 0
 	xor ax, ax
 	mov al, [snake_init_length]
 	mov [head], ax
 	dec al
 	mov [prev_head], ax
-	
+	mov [tail], 0
+
 	mov ah, 00h
 	mov al, 2
 	int 10h
@@ -167,11 +171,20 @@ main:
 	mov al, 02h
 	int 10h
 	call wait_for_key_press
+	cmp ah, 13h ;Restart
+	jne @@cont_ex
+	jmp @@new_game
+@@cont_ex:
 	call_restore_screen_state
 	call_exit
 
 	
 init_snake proc
+	mov di, offset snake
+	mov ax, 0
+	mov cx, MAX_SNAKE_LEN
+	rep stosw
+
 	mov di, offset snake
 	xor cx, cx
 	mov cl, [snake_init_length]
@@ -193,8 +206,11 @@ print_length proc
 	mov dl, 15
 	call put_str
 	
-	call clear_byte_buff
 	call get_snake_length
+	cmp ax, [snake_length_record]
+	jbe @@not_new_record
+		mov [snake_length_record], ax
+@@not_new_record:
 	call num_to_str
 	mov si, offset output
 	mov cx, output_len - 1
@@ -204,6 +220,12 @@ print_length proc
 	mov dl, 15
 	mov si, offset stat_max_snake_length
 	mov cx, offset stat_max_snake_length_len
+	call put_str
+	
+	mov ax, [snake_length_record]
+	call num_to_str
+	mov si, offset output
+	mov cx, output_len - 1
 	call put_str
 	
 	inc dh
