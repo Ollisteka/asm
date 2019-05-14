@@ -55,6 +55,9 @@ move_snake proc
 	cmp al, FOOD_DEATH
 	je @@death_wall
 	
+	cmp al, FOOD_STRANGE
+	je @@strange_food
+	
 	cmp dl, FIELD_WIDTH-1
 	je @@swap_wall
 	
@@ -105,28 +108,30 @@ move_snake proc
 		;teleport_wall
 		mov dh, FIELD_HEIGHT-2
 		jmp @@simple
+		
+@@strange_food:
+	mov si, 1
+	call get_snake_length
+	sub ax, 2
+	mov di, ax
+	call random
+	print_reg ax
+	mov cx, ax
+	@@dec_tail:
+		call remove_tail
+		loop @@dec_tail
+
+
+	mov al, FOOD_STRANGE
+	mov bl, FOOD_COLOR_STRANGE
+	mov cx, 1
+	call init_food_item
+	
+	jmp @@move_head
 
 @@exit:
-	;mov si, [prev_head]
-	;print_reg si
-	;mov si, [tail]
-	;print_reg si
-
-	;call get_prev_head
-	;print_reg dx
-	;call get_tail
-	;print_reg dx
 	ret
 endp move_snake
-
-try_eat proc
-	
-	
-	ret
-	
-@@good_food:
-	
-endp try_eat
 
 
 repaint_head_and_tail proc
@@ -210,7 +215,7 @@ swap proc
 endp swap
 
 remove_tail proc
-	push ax bx dx
+	push ax bx cx dx
 	mov si, [tail]
 	shl si, 1
 	mov dx, snake[si]
@@ -230,7 +235,7 @@ remove_tail proc
 
 @@change_tail_pos:
 	call change_tail_pos
-	pop dx bx ax
+	pop dx cx bx ax
 	ret
 endp remove_tail
 

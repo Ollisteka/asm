@@ -15,6 +15,7 @@ model tiny
 	PLUS = 0Dh
 	
 	F1 = 3Bh
+	ESC = 01h
 	
 	SWAP_WALL = 1Dh
 	DEATH_WALL = 9Dh
@@ -25,6 +26,8 @@ model tiny
 	FOOD_COLOR_GOOD = 1100b
 	FOOD_DEATH = 145
 	FOOD_COLOR_DEATH = 100b
+	FOOD_STRANGE = 127
+	FOOD_COLOR_STRANGE = 1101b
 
 	MAX_SNAKE_LEN = (FIELD_WIDTH - 2)*(FIELD_HEIGHT - 2)
 	
@@ -65,7 +68,7 @@ model tiny
 	CR = 0Dh
 	LF = 0Ah
 	
-	help_msg db "Controls:", CR, LF, "    ",18h,19h,1Ah,1Bh,"   - movement.", CR, LF, "    -/+    - decrease/increase snake's speed.", CR, LF, "    SPACE  - pause. Press SPACE again to continue.", CR, LF,"    F1     - this help. Press F1 again to continue.", CR, LF, "    ESC    - stop game. Then press R to restart or any other key to exit.", CR, LF, CR, LF, "Walls:", CR, LF, "    ", DEATH_WALL,"  -  go in and die", CR, LF, "    ", SWAP_WALL,"  -  go in and swap head and tail", CR, LF, "    ",TELEPORT_WALL,"  -  go in and teleport to the other side", CR, LF, CR, LF, "Foods:", CR, LF, "    A  -  eat it and die", CR, LF, "    B  -  eat it and grow", CR, LF, "    C  -  eat it and see what happens"
+	help_msg db "Controls:", CR, LF, "    ",18h,19h,1Ah,1Bh,"   - movement.", CR, LF, "    -/+    - decrease/increase snake's speed.", CR, LF, "    SPACE  - pause. Press SPACE again to continue.", CR, LF,"    F1     - this help. Press F1 again to continue.", CR, LF, "    ESC    - stop game. Press R to restart or ESC again to exit.", CR, LF, CR, LF, "Walls:", CR, LF, "    ", DEATH_WALL,"  -  go in and die", CR, LF, "    ", SWAP_WALL,"  -  go in and swap head and tail", CR, LF, "    ",TELEPORT_WALL,"  -  go in and teleport to the other side", CR, LF, CR, LF, "Foods:", CR, LF, "    ",FOOD_DEATH,"  -  eat it and die", CR, LF, "    ",FOOD_GOOD,"  -  eat it and grow", CR, LF, "    ",FOOD_STRANGE,"  -  eat it and see what happens"
 	help_msg_len = $ - help_msg
 
 	
@@ -84,36 +87,7 @@ main:
 	call_save_screen_state
 
 @@new_game:
-	mov [direction], 0
-	mov [good_food_eaten], 0
-	mov [flags], 0
-	xor ax, ax
-	mov al, [snake_init_length]
-	mov [head], ax
-	dec al
-	mov [prev_head], ax
-	mov [tail], 0
-
-	mov ah, 00h
-	mov al, 2
-	int 10h
-	
-	mov ah, 05h
-	mov al, 0
-	int 10h
-	
-	call init_pause
-	call init_game_over
-	call init_help
-	mov bh, 0
-	call init_snake
-	call init_food
-	call draw_full_snake
-	mov bl, 101b
-	call draw_swap_wall
-	call draw_death_wall
-	call draw_teleport_wall
-	call draw_upper_wall
+	call setup
 	
 @@loop:	
 	call delay
@@ -132,7 +106,7 @@ main:
 	jz @@try_move
 
 	call wait_for_key_press
-	cmp ah, 01
+	cmp ah, ESC
 	je @@exit
 	
 	cmp ah, 39h
@@ -160,11 +134,13 @@ main:
 	mov ah, 05h
 	mov al, 02h
 	int 10h
-	call wait_for_key_press
-	cmp ah, 13h ;Restart
-	jne @@cont_ex
-	jmp @@new_game
-@@cont_ex:
+	@@exit_loop:
+		call wait_for_key_press
+		cmp ah, 13h ;Restart
+		je @@new_game
+		cmp ah, ESC
+		jne @@exit_loop
+
 	call_restore_screen_state
 	call_exit
 	
@@ -251,6 +227,39 @@ init_snake proc
 	ret
 endp init_snake
 
+setup proc
+	mov [direction], 0
+	mov [good_food_eaten], 0
+	mov [flags], 0
+	xor ax, ax
+	mov al, [snake_init_length]
+	mov [head], ax
+	dec al
+	mov [prev_head], ax
+	mov [tail], 0
+
+	mov ah, 00h
+	mov al, 2
+	int 10h
+	
+	mov ah, 05h
+	mov al, 0
+	int 10h
+	
+	call init_pause
+	call init_game_over
+	call init_help
+	mov bh, 0
+	call init_snake
+	call init_food
+	call draw_full_snake
+	mov bl, 101b
+	call draw_swap_wall
+	call draw_death_wall
+	call draw_teleport_wall
+	call draw_upper_wall
+endp setup
+
 get_random_pos proc
 ;DX = pos
 	mov si, 1
@@ -290,6 +299,11 @@ init_food proc
 	mov cx, 1
 	call init_food_item
 	
+	mov al, FOOD_STRANGE
+	mov bl, FOOD_COLOR_STRANGE
+	mov cx, 1
+	call init_food_item
+	
 	ret
 endp init_food
 
@@ -297,10 +311,13 @@ init_food_item proc
 ;AL=FOOD ICON
 ;BL=FOOD COLOR
 ;CX=count
+	push dx
+@@regenerate:
 	call get_free_random_pos
 	mov bh, 0
 	call put_char_at_coord
-	loop init_food_item
+	loop @@regenerate
+	pop dx
 	ret
 endp init_food_item
 
