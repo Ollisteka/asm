@@ -18,10 +18,8 @@ model tiny
 	DEATH_WALL = 9Dh
 	TELEPORT_WALL = 11h
 	SNAKE_CHAR = '*'
-	
-	;MAX_SNAKE_LEN = (FIELD_WIDTH - 15)*(FIELD_HEIGHT - 10)
+
 	MAX_SNAKE_LEN = (FIELD_WIDTH - 2)*(FIELD_HEIGHT - 2)
-	;MAX_SNAKE_LEN = 128
 	
 	mode_num		db 0
 	page_num		db 0
@@ -122,8 +120,7 @@ main:
 	je @@increase_speed
 	
 	test [flags], 100b
-	jnz @@loop ;PAUSE
-	
+	jnz @@loop ;PAUSE	
 	
 	@@try_move:
 		call arrow_handler
@@ -177,61 +174,6 @@ main:
 	je @@try_move
 	inc [speed]
 	jmp @@try_move
-	
-arrow_handler proc
-	call get_prev_head
-	
-	cmp ah, RIGHT_ARROW
-	je @@move_right
-	
-	cmp ah, LEFT_ARROW
-	je @@move_left
-	
-	cmp ah, UP_ARROW
-	je @@move_up
-	
-	cmp ah, DOWN_ARROW
-	je @@move_down
-	
-	ret
-	
-@@move_right:
-	inc dl
-	call move_snake
-	mov [direction], RIGHT_ARROW
-	ret
-	
-@@move_left:
-	dec dl
-	call move_snake
-	mov [direction], LEFT_ARROW
-	ret
-	
-@@move_up:
-	dec dh
-	call move_snake
-	mov [direction], UP_ARROW
-	ret
-	
-@@move_down:
-	inc dh
-	call move_snake
-	mov [direction], DOWN_ARROW
-	ret
-	
-endp arrow_handler
-
-	
-delay proc
-	mov cx, [speed]
-	@@outer_loop:
-		push cx
-		mov cx, 0ffffh
-		@@loop: loop $
-		pop cx
-		loop @@outer_loop
-	ret
-endp delay
 	
 	
 init_snake proc

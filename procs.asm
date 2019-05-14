@@ -38,6 +38,17 @@ read_word_lm proc
 	ret
 endp read_word_lm
 
+delay proc
+	mov cx, [speed]
+	@@outer_loop:
+		push cx
+		mov cx, 0ffffh
+		@@loop: loop $
+		pop cx
+		loop @@outer_loop
+	ret
+endp delay
+
 wait_for_key_press:
 	xor ax,ax
 	int 16h

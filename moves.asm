@@ -1,5 +1,50 @@
 jmp main
 
+
+arrow_handler proc
+	call get_prev_head
+	
+	cmp ah, RIGHT_ARROW
+	je @@move_right
+	
+	cmp ah, LEFT_ARROW
+	je @@move_left
+	
+	cmp ah, UP_ARROW
+	je @@move_up
+	
+	cmp ah, DOWN_ARROW
+	je @@move_down
+	
+	ret
+	
+@@move_right:
+	inc dl
+	call move_snake
+	mov [direction], RIGHT_ARROW
+	ret
+	
+@@move_left:
+	dec dl
+	call move_snake
+	mov [direction], LEFT_ARROW
+	ret
+	
+@@move_up:
+	dec dh
+	call move_snake
+	mov [direction], UP_ARROW
+	ret
+	
+@@move_down:
+	inc dh
+	call move_snake
+	mov [direction], DOWN_ARROW
+	ret
+	
+endp arrow_handler
+
+
 move_snake proc
 ;DX = next coords
 	cmp dl, FIELD_WIDTH-1
