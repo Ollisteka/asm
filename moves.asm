@@ -76,6 +76,13 @@ get_snake_length proc
 	sub ax, [tail]
 	
 @@exit:
+	test [flags], 1
+	jz @@exit1
+		mov bx, MAX_SNAKE_LEN
+		sub bx, ax
+		mov ax, bx
+
+@@exit1:
 	pop bx
 	ret
 endp get_snake_length
