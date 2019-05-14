@@ -35,6 +35,8 @@ model tiny
 	snake_init_length db 18
 	snake_length_record dw 0
 	
+	food_init_count db 3
+	
 	
 	prev_head dw 0
 	head dw 0
@@ -100,7 +102,11 @@ main:
 	call init_help
 	mov bh, 0
 	call init_snake
-	call init_food
+		xor cx, cx
+		mov cl, [food_init_count]
+		@@food_loop:
+			call init_food
+			loop @@food_loop
 	call draw_full_snake
 	mov bl, 101b
 	call draw_swap_wall
@@ -261,13 +267,17 @@ get_random_pos proc
 endp get_random_pos
 
 init_food proc
+	push ax bx cx dx
+	@@regenerate:
 	call get_random_pos
-	call is_intersected
-	jz init_food
+	call get_char_at_coord
+	cmp al, 20h
+	jne @@regenerate
 	mov al, FOOD_GOOD
 	mov bl, FOOD_COLOR_GOOD
 	mov bh, 0
 	call put_char_at_coord
+	pop dx cx bx ax
 	ret
 endp init_food
 
