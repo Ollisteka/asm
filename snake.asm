@@ -60,6 +60,8 @@ model tiny
 	stat_food_eaten			db '  Food eaten:              '
 	stat_food_eaten_len		= $ - stat_food_eaten
 	
+	good_food_eaten dw 0
+	
 	CR = 0Dh
 	LF = 0Ah
 	
@@ -83,6 +85,7 @@ main:
 
 @@new_game:
 	mov [direction], 0
+	mov [good_food_eaten], 0
 	mov [flags], 0
 	xor ax, ax
 	mov al, [snake_init_length]
@@ -336,6 +339,12 @@ print_length proc
 	mov dl, 15
 	mov si, offset stat_food_eaten
 	mov cx, offset stat_food_eaten_len
+	call put_str
+	
+	mov ax, [good_food_eaten]
+	call num_to_str
+	mov si, offset output
+	mov cx, output_len - 1
 	call put_str
 	ret
 endp print_length

@@ -76,6 +76,7 @@ move_snake proc
 	mov bl, FOOD_COLOR_GOOD
 	mov cx, 1
 	call init_food_item
+	inc [good_food_eaten]
 	pop dx
 @@move_head:
 	call move_head
