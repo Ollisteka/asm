@@ -11,6 +11,9 @@ model tiny
 	LEFT_ARROW = 4Bh
 	RIGHT_ARROW = 4Dh
 	
+	MINUS = 0Ch
+	PLUS = 0Dh
+	
 	SWAP_WALL = 1Dh
 	DEATH_WALL = 9Dh
 	TELEPORT_WALL = 11h
@@ -112,51 +115,21 @@ main:
 	cmp ah, 39h
 	je @@space_handler
 	
+	cmp ah, MINUS
+	je @@decrease_speed
+
+	cmp ah, PLUS
+	je @@increase_speed
+	
 	test [flags], 100b
 	jnz @@loop ;PAUSE
 	
 	
 	@@try_move:
-	call get_prev_head
-	
-	cmp ah, RIGHT_ARROW
-	je @@move_right
-	
-	cmp ah, LEFT_ARROW
-	je @@move_left
-	
-	cmp ah, UP_ARROW
-	je @@move_up
-	
-	cmp ah, DOWN_ARROW
-	je @@move_down
+		call arrow_handler
 
 	jmp @@loop
-	
-@@move_right:
-	inc dl
-	call move_snake
-	mov [direction], RIGHT_ARROW
-	jmp @@loop
-	
-@@move_left:
-	dec dl
-	call move_snake
-	mov [direction], LEFT_ARROW
-	jmp @@loop
-	
-@@move_up:
-	dec dh
-	call move_snake
-	mov [direction], UP_ARROW
-	jmp @@loop
-	
-@@move_down:
-	inc dh
-	call move_snake
-	mov [direction], DOWN_ARROW
-	jmp @@loop
-	
+
 	
 @@exit:
 	call print_length
@@ -189,8 +162,64 @@ main:
 		int 10h
 		jmp @@loop
 
+	
+@@increase_speed:
+	mov ah, [direction]
+	cmp [speed], 2
+	je @@try_move
+	dec [speed]
+	jmp @@try_move
 
 
+@@decrease_speed:
+	mov ah, [direction]
+	cmp [speed], 15
+	je @@try_move
+	inc [speed]
+	jmp @@try_move
+	
+arrow_handler proc
+	call get_prev_head
+	
+	cmp ah, RIGHT_ARROW
+	je @@move_right
+	
+	cmp ah, LEFT_ARROW
+	je @@move_left
+	
+	cmp ah, UP_ARROW
+	je @@move_up
+	
+	cmp ah, DOWN_ARROW
+	je @@move_down
+	
+	ret
+	
+@@move_right:
+	inc dl
+	call move_snake
+	mov [direction], RIGHT_ARROW
+	ret
+	
+@@move_left:
+	dec dl
+	call move_snake
+	mov [direction], LEFT_ARROW
+	ret
+	
+@@move_up:
+	dec dh
+	call move_snake
+	mov [direction], UP_ARROW
+	ret
+	
+@@move_down:
+	inc dh
+	call move_snake
+	mov [direction], DOWN_ARROW
+	ret
+	
+endp arrow_handler
 
 	
 delay proc
