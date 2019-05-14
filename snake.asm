@@ -34,6 +34,8 @@ model tiny
 	
 	flags db 0 ; X|X|X|X|X|PAUSE|DEAD|DEC\INC tail
 	self_cross_modes db 1 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
+	direction db 0; 0 = стоим, остальное - сканкоды стрелок
+	speed dw 5
 	
 	output db 4 dup(0), 20h, '$'
 	output_len = $ - output
@@ -60,6 +62,7 @@ main:
 	call_save_screen_state
 	
 @@new_game:
+	mov [direction], 0
 	mov [flags], 0
 	xor ax, ax
 	mov al, [snake_init_length]
@@ -87,15 +90,20 @@ main:
 	call draw_teleport_wall
 	
 @@loop:	
-	push ax
-	call clear_byte_buff
-	call get_snake_length
-	call num_to_str
-	call_print output
-	pop ax
+	call delay
+	;push ax
+	;call clear_byte_buff
+	;call get_snake_length
+	;call num_to_str
+	;call_print output
+	;pop ax
 	mov al, [flags]
 	and al, 10b
 	jnz @@exit ;DEAD
+
+	call check_for_key_press
+	mov ah, [direction]
+	jz @@try_move
 
 	call wait_for_key_press
 	cmp ah, 01
@@ -109,6 +117,8 @@ main:
 	
 	
 	@@try_move:
+	call get_prev_head
+	
 	cmp ah, RIGHT_ARROW
 	je @@move_right
 	
@@ -124,29 +134,44 @@ main:
 	jmp @@loop
 	
 @@move_right:
-	call get_prev_head
 	inc dl
 	call move_snake
+	mov [direction], RIGHT_ARROW
 	jmp @@loop
 	
 @@move_left:
-	call get_prev_head
 	dec dl
 	call move_snake
+	mov [direction], LEFT_ARROW
 	jmp @@loop
 	
 @@move_up:
-	call get_prev_head
 	dec dh
 	call move_snake
+	mov [direction], UP_ARROW
 	jmp @@loop
 	
 @@move_down:
-	call get_prev_head
 	inc dh
 	call move_snake
+	mov [direction], DOWN_ARROW
 	jmp @@loop
 	
+	
+@@exit:
+	call print_length
+	mov ah, 05h
+	mov al, 02h
+	int 10h
+	call wait_for_key_press
+	cmp ah, 13h ;Restart
+	jne @@cont_ex
+	jmp @@new_game
+@@cont_ex:
+	call_restore_screen_state
+	call_exit
+	
+
 @@space_handler:
 	test [flags], 100b
 	jz @@set_pause
@@ -165,19 +190,20 @@ main:
 		jmp @@loop
 
 
-@@exit:
-	call print_length
-	mov ah, 05h
-	mov al, 02h
-	int 10h
-	call wait_for_key_press
-	cmp ah, 13h ;Restart
-	jne @@cont_ex
-	jmp @@new_game
-@@cont_ex:
-	call_restore_screen_state
-	call_exit
 
+
+	
+delay proc
+	mov cx, [speed]
+	@@outer_loop:
+		push cx
+		mov cx, 0ffffh
+		@@loop: loop $
+		pop cx
+		loop @@outer_loop
+	ret
+endp delay
+	
 	
 init_snake proc
 	mov di, offset snake

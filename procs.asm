@@ -43,6 +43,15 @@ wait_for_key_press:
 	int 16h
 	ret
 	
+check_for_key_press:
+;ZF set if no keystroke available
+;ZF clear if keystroke available
+;AH = BIOS scan code
+;AL = ASCII character
+	mov ax, 0100h
+	int 16h
+	ret
+	
 hide_cursor:
 	push bx dx
 	xor bx, bx
