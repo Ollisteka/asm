@@ -76,6 +76,101 @@ draw_death_wall proc
 	ret
 endp draw_death_wall
 
+draw_help proc
+	mov al, 0B2h
+	mov bl, 0011b
+	mov bh, 3
+	
+;H
+	mov dh, 1
+	mov dl, 25
+	call draw_wide_vert_line
+	
+	add dl, 3
+	call draw_wide_vert_line
+	
+	mov dh, 1+2
+	mov dl, 25+2
+	mov cx, 3
+	call draw_hor_wall
+;H
+
+;E
+	mov dh, 1
+	mov dl, 33 ;column
+	call draw_EG_common
+	
+	mov dh, 1+2
+	mov dl, 33+1 ;column
+	mov cx, 3
+	call draw_hor_wall
+;E
+
+;L
+	mov dh, 1
+	mov dl, 41
+	call draw_wide_vert_line
+	
+	mov dh, 1+4
+	mov dl, 41+2
+	mov cx, 4
+	call draw_hor_wall
+;L
+
+;P
+	mov dh, 1
+	mov dl, 48
+	call draw_EG_common
+	
+	mov bl, 0
+	mov dh, 1+4
+	mov dl, 48+2
+	mov cx, 5
+	call draw_hor_wall
+	
+	mov dh, 1+2
+	mov dl, 48+2
+	mov cx, 5
+	call draw_hor_wall
+	
+	mov bl, 0011b
+	
+	mov dh, 1+2
+	mov dl, 48+2 ;column
+	mov cx, 3
+	call draw_hor_wall
+	
+	mov dh, 1
+	mov dl, 48+5	
+	mov cx, 2
+	@@R1:
+		push cx
+		mov cx, 3
+		push dx
+		call draw_vert_wall
+		pop dx
+		inc dl
+		pop cx
+		loop @@R1
+;P
+
+	ret
+endp draw_help
+
+draw_wide_vert_line proc
+	mov cx, 2
+	@@H1:
+		push cx
+		mov cx, 5
+		push dx
+		call draw_vert_wall
+		pop dx
+		inc dl
+		pop cx
+		loop @@H1
+	ret
+endp draw_wide_vert_line
+
 
 init_game_over proc
 	mov al, 0B2h

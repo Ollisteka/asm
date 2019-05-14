@@ -14,6 +14,8 @@ model tiny
 	MINUS = 0Ch
 	PLUS = 0Dh
 	
+	F1 = 3Bh
+	
 	SWAP_WALL = 1Dh
 	DEATH_WALL = 9Dh
 	TELEPORT_WALL = 11h
@@ -49,6 +51,13 @@ model tiny
 	stat_food_eaten			db '  Food eaten:              '
 	stat_food_eaten_len		= $ - stat_food_eaten
 	
+	CR = 0Dh
+	LF = 0Ah
+	
+	help_msg db "Controls:", CR, LF, "    ",18h,19h,1Ah,1Bh,"   - movement.", CR, LF, "    -/+    - decrease/increase snake's speed.", CR, LF, "    SPACE  - pause. Press SPACE again to continue.", CR, LF,"    F1     - this help. Press F1 again to continue.", CR, LF, "    ESC    - stop game. Then press R to restart or any other key to exit.", CR, LF, CR, LF, "Walls:", CR, LF, "    ", DEATH_WALL,"  -  go in and die", CR, LF, "    ", SWAP_WALL,"  -  go in and swap head and tail", CR, LF, "    ",TELEPORT_WALL,"  -  go in and teleport to the other side", CR, LF, CR, LF, "Foods:", CR, LF, "    A  -  eat it and die", CR, LF, "    B  -  eat it and grow", CR, LF, "    C  -  eat it and see what happens"
+	help_msg_len = $ - help_msg
+
+	
 
 .code
 ORG 100h
@@ -83,6 +92,7 @@ main:
 	
 	call init_pause
 	call init_game_over
+	call init_help
 	mov bh, 0
 	call init_snake
 	call draw_full_snake
@@ -115,6 +125,9 @@ main:
 	cmp ah, 39h
 	je @@space_handler
 	
+	cmp ah, F1
+	je @@help_handler
+	
 	cmp ah, MINUS
 	je @@decrease_speed
 
@@ -128,7 +141,6 @@ main:
 		call arrow_handler
 
 	jmp @@loop
-
 	
 @@exit:
 	call print_length
@@ -143,6 +155,9 @@ main:
 	call_restore_screen_state
 	call_exit
 	
+@@help_handler:
+	call help_handler
+	jmp @@loop
 
 @@space_handler:
 	test [flags], 100b
@@ -159,7 +174,7 @@ main:
 		mov ah, 05h
 		mov al, 01h
 		int 10h
-		jmp @@loop
+		jmp @@loop	
 
 	
 @@increase_speed:
@@ -176,6 +191,33 @@ main:
 	je @@try_move
 	inc [speed]
 	jmp @@try_move
+	
+help_handler:
+	mov ah, 05h
+	mov al, 03h
+	int 10h
+	@@loop:
+		call wait_for_key_press
+		cmp ah, F1
+		jne @@loop
+	mov ah, 05h
+	mov al, 00h
+	int 10h
+	ret
+	
+init_help proc
+	call draw_help
+	mov bp, offset help_msg
+	mov cx, offset help_msg_len
+	mov bh, 3
+	mov bl, 1001b
+	mov dh, 7
+	mov dl, 0
+	mov al, 1
+	mov ah, 13h
+	int 10h
+	ret
+endp init_help
 	
 	
 init_snake proc
