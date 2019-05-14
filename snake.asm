@@ -23,6 +23,8 @@ model tiny
 	
 	FOOD_GOOD = 02
 	FOOD_COLOR_GOOD = 1100b
+	FOOD_DEATH = 145
+	FOOD_COLOR_DEATH = 100b
 
 	MAX_SNAKE_LEN = (FIELD_WIDTH - 2)*(FIELD_HEIGHT - 2)
 	
@@ -102,11 +104,7 @@ main:
 	call init_help
 	mov bh, 0
 	call init_snake
-		xor cx, cx
-		mov cl, [food_init_count]
-		@@food_loop:
-			call init_food
-			loop @@food_loop
+	call init_food
 	call draw_full_snake
 	mov bl, 101b
 	call draw_swap_wall
@@ -266,20 +264,42 @@ get_random_pos proc
 	ret
 endp get_random_pos
 
-init_food proc
-	push ax bx cx dx
+get_free_random_pos proc
+	push ax bx cx
 	@@regenerate:
-	call get_random_pos
-	call get_char_at_coord
-	cmp al, 20h
-	jne @@regenerate
+		call get_random_pos
+		call get_char_at_coord
+		cmp al, 20h
+		jne @@regenerate
+	pop cx bx ax
+	ret
+endp get_free_random_pos
+
+init_food proc
 	mov al, FOOD_GOOD
 	mov bl, FOOD_COLOR_GOOD
-	mov bh, 0
-	call put_char_at_coord
-	pop dx cx bx ax
+	xor cx, cx
+	mov cl, [food_init_count]
+	call init_food_item
+	
+	mov al, FOOD_DEATH
+	mov bl, FOOD_COLOR_DEATH
+	mov cx, 1
+	call init_food_item
+	
 	ret
 endp init_food
+
+init_food_item proc
+;AL=FOOD ICON
+;BL=FOOD COLOR
+;CX=count
+	call get_free_random_pos
+	mov bh, 0
+	call put_char_at_coord
+	loop init_food_item
+	ret
+endp init_food_item
 
 print_length proc
 	mov si, offset stat_snake_length

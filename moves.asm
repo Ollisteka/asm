@@ -52,6 +52,9 @@ move_snake proc
 	cmp al, FOOD_GOOD
 	je @@grow
 	
+	cmp al, FOOD_DEATH
+	je @@death_wall
+	
 	cmp dl, FIELD_WIDTH-1
 	je @@swap_wall
 	
@@ -69,7 +72,10 @@ move_snake proc
 	jmp @@move_head
 @@grow:
 	push dx
-	call init_food
+	mov al, FOOD_GOOD
+	mov bl, FOOD_COLOR_GOOD
+	mov cx, 1
+	call init_food_item
 	pop dx
 @@move_head:
 	call move_head
