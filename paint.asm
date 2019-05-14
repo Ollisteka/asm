@@ -21,6 +21,31 @@ draw_full_snake proc
 	ret
 endp draw_full_snake
 
+draw_upper_wall proc
+	cmp [upper_wall_type], 0
+	je @@death_wall
+	cmp [upper_wall_type], 1
+	je @@swap_wall
+	cmp [upper_wall_type], 2
+	je @@teleport_wall
+	jmp @@death_wall
+	
+@@death_wall:	
+	mov al, DEATH_WALL
+	jmp @@draw
+@@swap_wall:	
+	mov al, SWAP_WALL
+	jmp @@draw
+@@teleport_wall:	
+	mov al, TELEPORT_WALL
+	jmp @@draw
+@@draw:
+	mov cx, FIELD_WIDTH-2
+	mov dh, 0
+	mov dl, 1 ;column
+	call draw_hor_wall
+	ret
+endp draw_upper_wall
 
 draw_swap_wall proc
 	mov al, SWAP_WALL

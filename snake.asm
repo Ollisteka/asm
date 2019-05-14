@@ -35,6 +35,7 @@ model tiny
 	
 	flags db 0 ; X|X|X|X|X|PAUSE|DEAD|DEC\INC tail
 	self_cross_modes db 1 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
+	upper_wall_type db 1; 
 	direction db 0; 0 = стоим, остальное - сканкоды стрелок
 	speed dw 5
 	
@@ -61,7 +62,7 @@ start:
 
 main:
 	call_save_screen_state
-	
+
 @@new_game:
 	mov [direction], 0
 	mov [flags], 0
@@ -89,6 +90,7 @@ main:
 	call draw_swap_wall
 	call draw_death_wall
 	call draw_teleport_wall
+	call draw_upper_wall
 	
 @@loop:	
 	call delay

@@ -55,6 +55,9 @@ move_snake proc
 	
 	cmp dh, FIELD_HEIGHT-1
 	je @@death_wall
+	
+	cmp dh, 0
+	je @@upper_wall
 
 @@simple:
 	call remove_tail
@@ -73,6 +76,17 @@ move_snake proc
 @@death_wall:
 	or [flags], 10b
 	jmp @@exit
+	
+@@upper_wall:
+	cmp [upper_wall_type], 0
+	je @@death_wall
+	cmp [upper_wall_type], 1
+	je @@swap_wall
+	cmp [upper_wall_type], 2
+	jne @@death_wall
+		;teleport_wall
+		mov dh, FIELD_HEIGHT-2
+		jmp @@simple
 
 @@exit:
 	;mov si, [prev_head]
