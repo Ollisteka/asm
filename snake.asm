@@ -20,8 +20,13 @@ model tiny
 	DEATH_WALL = 9Dh
 	TELEPORT_WALL = 11h
 	SNAKE_CHAR = '*'
+	
+	FOOD_GOOD = 02
+	FOOD_COLOR_GOOD = 1100b
 
 	MAX_SNAKE_LEN = (FIELD_WIDTH - 2)*(FIELD_HEIGHT - 2)
+	
+	MAX_FOOD_COUNT = 30
 	
 	mode_num		db 0
 	page_num		db 0
@@ -95,6 +100,7 @@ main:
 	call init_help
 	mov bh, 0
 	call init_snake
+	call init_food
 	call draw_full_snake
 	mov bl, 101b
 	call draw_swap_wall
@@ -237,6 +243,33 @@ init_snake proc
 		loop @@loop
 	ret
 endp init_snake
+
+get_random_pos proc
+;DX = pos
+	mov si, 1
+	mov di, FIELD_HEIGHT-2
+	call random
+	push ax
+	mov di, FIELD_WIDTH-2
+	call random
+	mov bx, ax
+	pop ax
+	mov ah, al
+	mov al, bl
+	mov dx, ax
+	ret
+endp get_random_pos
+
+init_food proc
+	call get_random_pos
+	call is_intersected
+	jz init_food
+	mov al, FOOD_GOOD
+	mov bl, FOOD_COLOR_GOOD
+	mov bh, 0
+	call put_char_at_coord
+	ret
+endp init_food
 
 print_length proc
 	mov si, offset stat_snake_length

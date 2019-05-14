@@ -47,6 +47,11 @@ endp arrow_handler
 
 move_snake proc
 ;DX = next coords
+	call get_char_at_coord
+	print_reg ax
+	cmp al, FOOD_GOOD
+	je @@grow
+	
 	cmp dl, FIELD_WIDTH-1
 	je @@swap_wall
 	
@@ -61,6 +66,12 @@ move_snake proc
 
 @@simple:
 	call remove_tail
+	jmp @@move_head
+@@grow:
+	push dx
+	call init_food
+	pop dx
+@@move_head:
 	call move_head
 	jmp @@exit
 	
@@ -101,9 +112,14 @@ move_snake proc
 	ret
 endp move_snake
 
-teleport proc
+try_eat proc
+	
+	
 	ret
-endp teleport
+	
+@@good_food:
+	
+endp try_eat
 
 
 repaint_head_and_tail proc
@@ -214,8 +230,9 @@ endp remove_tail
 is_intersected proc
 ;RETURNS
 ;Z=1 iff intersection
-;if Z=1, CX = idx of intersected cell
-	;DX = tail coords
+
+;INPUT:
+;DX = tail coords
 	push ax
 	mov ax, dx
 	mov di, offset snake

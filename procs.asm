@@ -208,3 +208,40 @@ xor dx, dx
 pop dx cx bx
 ret
 endp num_to_str
+
+random proc
+	push	cx
+	push	dx
+	push	di
+ 
+	mov	dx, word [seed]
+	or	dx, dx
+	jnz	@@1
+	mov   ax, word[ds:006ch]
+	mov	dx, ax
+@@1:	
+	mov	ax, word [seed2]
+	or	ax, ax
+	jnz	@@2
+	in	ax, 40h
+@@2:		
+	mul	dx
+	inc	ax
+	mov 	word [seed], dx
+	mov	word [seed2], ax
+ 
+	xor	dx, dx
+	sub	di, si
+	inc	di
+	div	di
+	mov	ax, dx
+	add	ax, si
+ 
+	pop	di
+	pop	dx
+	pop	cx
+	ret
+ 
+endp random
+seed		dw 	0
+seed2		dw	0
