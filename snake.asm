@@ -35,6 +35,7 @@ model tiny
 	self_cross_modes db 1 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
 	
 	output db 4 dup(0), 20h, '$'
+	output_len = $ - output
 	
 	stat_snake_length		db 'Snake length:              '
 	stat_snake_length_len	= $ - stat_snake_length
@@ -81,7 +82,13 @@ main:
 	call draw_death_wall
 	call draw_teleport_wall
 	
-@@loop:
+@@loop:	
+	push ax
+	call clear_byte_buff
+	call get_snake_length
+	call num_to_str
+	call_print output
+	pop ax
 	mov al, [flags]
 	and al, 10b
 	jnz @@exit ;DEAD
@@ -186,6 +193,13 @@ print_length proc
 	mov dl, 15
 	call put_str
 	
+	call clear_byte_buff
+	call get_snake_length
+	call num_to_str
+	mov si, offset output
+	mov cx, output_len - 1
+	call put_str
+	
 	inc dh
 	mov dl, 15
 	mov si, offset stat_max_snake_length
@@ -199,4 +213,5 @@ print_length proc
 	call put_str
 	ret
 endp print_length
+
 end start

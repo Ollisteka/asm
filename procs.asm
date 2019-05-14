@@ -141,3 +141,47 @@ rts2: mov [di], bl         ; store ASCII in buffer
     call_print output
 	pop dx cx bx ax
     ret
+	
+
+clear_byte_buff proc
+;SI - buffer
+;CX - length
+	push ax
+	mov di, offset output
+	mov cx, output_len
+	dec cx
+	mov ax, 20h
+	rep stosb
+	pop ax
+	ret
+endp clear_byte_buff
+
+num_to_str proc
+;AX - num
+push bx cx dx
+mov di, offset output
+mov cx, 10
+xor bx, bx
+xor dx, dx
+
+@@divide_loop:
+;ax = ax / cx
+;dx = ax % cx
+	div cx
+	push dx
+	xor dx, dx
+	inc bx
+	test ax, ax
+	jnz @@divide_loop
+	
+@@fill_buffer:
+	pop ax
+	add al, '0'
+	stosb
+	dec bx
+	test bx, bx
+	jnz @@fill_buffer
+
+pop dx cx bx
+ret
+endp num_to_str
