@@ -23,7 +23,8 @@
 	call move_pointer
 	mov bl, '?'
 	cmp bl, [si*1]
-	je @@args_help
+	jne @@try_length_parse
+	jmp @@args_help
 	
 @@try_length_parse:
 	mov bl, 'l'
@@ -31,16 +32,42 @@
 	je @@length_parse
 	mov bl, 'L'
 	cmp bl, [si*1]
-	jne @@try_blink_parse
+	jne @@try_food_parse
 	@@length_parse:
 		push offset snake_init_length
 		push offset @@double_arg_error
 		push LENGTH_MASK
 		call arg_parse; PAGE_MASK, error, page_num
-		cmp [snake_init_length], 25
-		ja @@big_snake_error
-		cmp [snake_init_length], 0
-		je @@small_snake_error
+		push cx
+		mov ax, 1
+		mov cx, 25
+		xor bx, bx
+		mov bl, [snake_init_length]
+		call is_inside
+		pop cx
+		jz @@snake_error
+		jmp @@parse_loop
+		
+@@try_food_parse:
+	mov bl, 'f'
+	cmp bl, [si*1]
+	je @@food_parse
+	mov bl, 'F'
+	cmp bl, [si*1]
+	jne @@try_blink_parse
+	@@food_parse:
+		push offset food_init_count
+		push offset @@double_arg_error
+		push FOOD_MASK
+		call arg_parse; PAGE_MASK, error, page_num
+		push cx
+		mov ax, 1
+		mov cx, 50
+		xor bx, bx
+		mov bl, [food_init_count]
+		call is_inside
+		pop cx
+		jz @@food_error
 		jmp @@parse_loop
 
 @@try_blink_parse:
@@ -58,20 +85,22 @@
 	call_print double_arg_err_msg
 	jmp @@just_exit
 	
-	@@big_snake_error:
-	call_print big_snake_err_msg
+	@@snake_error:
+	call_print snake_err_msg
+	jmp @@just_exit
+
+	@@food_error:
+	call_print food_err_msg
 	jmp @@just_exit
 	
-	@@small_snake_error:
-	call_print small_snake_err_msg
-	jmp @@just_exit
 	
 
 
 error_msg   	db "Some error with args. Check help (/?).", "$"
 double_arg_err_msg  db "You can't use the same argument twice", "$"
-big_snake_err_msg  db "Snake init length is too large. Max is 25", "$"
-small_snake_err_msg  db "Snake init length must be at leat 1", "$"
-help_args_msg db "Play snake and enjoy your life!",CR,LF,"/s - self-cross mode:",CR,LF,"    0 - allowed;",CR,LF,"    1 - will cut a tail;",CR,LF,"    2 - deadly;",CR,LF,"/u - upper wall type:",CR,LF,"    0 - death wall;",CR,LF,"    1 - swap wall;",CR,LF,"    2 - teleport wall;",CR,LF,"/l - snake init length (default is X, max is 25);",CR,LF,"/f - food init amount (default is 3);",CR,LF,"/? - this help", "$"
+snake_err_msg  db "Snake init length must be inside [1, 25] range", "$"
+food_err_msg  db "Max food amount must be inside [1, 50] range", "$"
+help_args_msg db "Play snake and enjoy your life!",CR,LF,"/s - self-cross mode:",CR,LF,"    0 - allowed;",CR,LF,"    1 - will cut a tail;",CR,LF,"    2 - deadly;",CR,LF,"/u - upper wall type:",CR,LF,"    0 - death wall;",CR,LF,"    1 - swap wall;",CR,LF,"    2 - teleport wall;",CR,LF,"/l - snake init length (default is 15, max is 25);",CR,LF,"/f - food init amount (default is 3, max is 50);",CR,LF,"/? - this help", "$"
 args_flags db 0 ;X|X|X|X|X|X|L|F
+FOOD_MASK = 1
 LENGTH_MASK = 2

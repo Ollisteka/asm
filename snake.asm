@@ -38,7 +38,7 @@ model tiny
 	page_num		db 0
 	
 	snake dw MAX_SNAKE_LEN dup(0) ; координаты?
-	snake_init_length db 18
+	snake_init_length db 15
 	snake_length_record dw 0
 	
 	food_init_count db 3

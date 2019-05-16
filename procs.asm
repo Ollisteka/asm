@@ -2,6 +2,40 @@ jmp main
 
 SPACE = 20h
 
+is_inside proc
+;AX = left edge
+;BX = x
+;CX = right edge
+
+;ZF = 0 <=> ax <= bx <= cx
+	cmp ax, bx
+	ja @@false ; ax > bx
+	cmp bx, cx
+	ja @@false
+
+	call clear_zf
+	ret
+
+@@false:
+	call set_zf
+	ret
+endp is_inside
+
+clear_zf:
+	push dx
+	mov dx, 1
+	test dx, dx ;clear ZF
+	pop dx
+	ret
+	
+set_zf:
+	push dx
+	xor dx, dx
+	test dx, dx ;clear ZF
+	pop dx
+	ret
+
+
 arg_parse proc ;arg_mask, arg_var, error
 	pop bp
 	pop ax
