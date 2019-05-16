@@ -9,11 +9,6 @@ read_byte_lowmem macro address
 	call read_byte_lm
 endm
 
-read_word_lowmem macro address
-	mov si, address
-	call read_word_lm
-endm
-
 call_save_screen_state macro
 	read_byte_lowmem ACTIVE_PAGE
 	push ax
@@ -36,7 +31,6 @@ call_exit macro
 	mov ah, EXIT
     int SYSCALL
 endm
-
 
 get_snake_coord macro pointer
 	push bx

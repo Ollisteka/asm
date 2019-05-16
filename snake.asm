@@ -84,6 +84,7 @@ start:
 	include moves.asm
 	include paint.asm
 	include sound.asm
+	include init.asm
 
 main:
 	call_save_screen_state
@@ -93,12 +94,7 @@ main:
 	
 @@loop:	
 	call delay
-	;push ax
-	;call clear_byte_buff
-	;call get_snake_length
-	;call num_to_str
-	;call_print output
-	;pop ax
+
 	mov al, [flags]
 	and al, 10b
 	jnz @@exit ;DEAD
@@ -132,7 +128,7 @@ main:
 	jmp @@loop
 	
 @@exit:
-	call print_length
+	call print_stat
 	mov ah, 05h
 	mov al, 02h
 	int 10h
@@ -197,135 +193,8 @@ help_handler:
 	mov al, 00h
 	int 10h
 	ret
-	
-init_help proc
-	call draw_help
-	mov bp, offset help_msg
-	mov cx, offset help_msg_len
-	mov bh, 3
-	mov bl, 1001b
-	mov dh, 7
-	mov dl, 0
-	mov al, 1
-	mov ah, 13h
-	int 10h
-	ret
-endp init_help
-	
-	
-init_snake proc
-	mov di, offset snake
-	mov ax, 0
-	mov cx, MAX_SNAKE_LEN
-	rep stosw
 
-	mov di, offset snake
-	xor cx, cx
-	mov cl, [snake_init_length]
-	mov ah, FIELD_HEIGHT / 2 ;row
-	mov al, 5 ;column
-	@@loop:
-		stosw
-		inc al
-		loop @@loop
-	ret
-endp init_snake
-
-setup proc
-	mov [direction], 0
-	mov [good_food_eaten], 0
-	mov [flags], 0
-	xor ax, ax
-	mov al, [snake_init_length]
-	mov [head], ax
-	dec al
-	mov [prev_head], ax
-	mov [tail], 0
-
-	mov ah, 00h
-	mov al, 2
-	int 10h
-	
-	mov ah, 05h
-	mov al, 0
-	int 10h
-	
-	call init_pause
-	call init_game_over
-	call init_help
-	mov bh, 0
-	call init_snake
-	call init_food
-	call draw_full_snake
-	mov bl, 101b
-	call draw_swap_wall
-	call draw_death_wall
-	call draw_teleport_wall
-	call draw_upper_wall
-endp setup
-
-get_random_pos proc
-;DX = pos
-	mov si, 1
-	mov di, FIELD_HEIGHT-2
-	call random
-	push ax
-	mov di, FIELD_WIDTH-2
-	call random
-	mov bx, ax
-	pop ax
-	mov ah, al
-	mov al, bl
-	mov dx, ax
-	ret
-endp get_random_pos
-
-get_free_random_pos proc
-	push ax bx cx
-	@@regenerate:
-		call get_random_pos
-		call get_char_at_coord
-		cmp al, 20h
-		jne @@regenerate
-	pop cx bx ax
-	ret
-endp get_free_random_pos
-
-init_food proc
-	mov al, FOOD_GOOD
-	mov bl, FOOD_COLOR_GOOD
-	xor cx, cx
-	mov cl, [food_init_count]
-	call init_food_item
-	
-	mov al, FOOD_DEATH
-	mov bl, FOOD_COLOR_DEATH
-	mov cx, 1
-	call init_food_item
-	
-	mov al, FOOD_STRANGE
-	mov bl, FOOD_COLOR_STRANGE
-	mov cx, 1
-	call init_food_item
-	
-	ret
-endp init_food
-
-init_food_item proc
-;AL=FOOD ICON
-;BL=FOOD COLOR
-;CX=count
-	push dx
-@@regenerate:
-	call get_free_random_pos
-	mov bh, 0
-	call put_char_at_coord
-	loop @@regenerate
-	pop dx
-	ret
-endp init_food_item
-
-print_length proc
+print_stat proc
 	mov si, offset stat_snake_length
 	mov cx, offset stat_snake_length_len
 	mov bh, 2
@@ -368,6 +237,6 @@ print_length proc
 	mov cx, output_len - 1
 	call put_str
 	ret
-endp print_length
+endp print_stat
 
 end start

@@ -385,3 +385,52 @@ dec_head proc
 	pop bx
 	ret
 endp dec_head
+
+get_prev_head proc
+	get_snake_coord prev_head
+	ret
+endp get_prev_head
+
+get_tail proc
+	get_snake_coord tail
+	ret
+endp get_tail
+
+delay proc
+	mov cx, [speed]
+	@@outer_loop:
+		push cx
+		mov cx, 0ffffh
+		@@loop: loop $
+		pop cx
+		loop @@outer_loop
+	ret
+endp delay
+
+
+get_random_pos proc
+;DX = pos
+	mov si, 1
+	mov di, FIELD_HEIGHT-2
+	call random
+	push ax
+	mov di, FIELD_WIDTH-2
+	call random
+	mov bx, ax
+	pop ax
+	mov ah, al
+	mov al, bl
+	mov dx, ax
+	ret
+endp get_random_pos
+
+get_free_random_pos proc
+	push ax bx cx
+	@@regenerate:
+		call get_random_pos
+		call get_char_at_coord
+		cmp al, 20h
+		jne @@regenerate
+	pop cx bx ax
+	ret
+endp get_free_random_pos

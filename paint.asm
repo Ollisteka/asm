@@ -172,7 +172,7 @@ draw_wide_vert_line proc
 endp draw_wide_vert_line
 
 
-init_game_over proc
+draw_game_over proc
 	mov al, 0B2h
 	mov bl, 1100b
 	mov bh, 2
@@ -414,7 +414,7 @@ init_game_over proc
 	
 ;R
 	ret
-endp init_game_over
+endp draw_game_over
 
 draw_EG_common proc
 ;dh, dl = base
@@ -456,7 +456,7 @@ draw_EG_common proc
 	ret
 endp draw_EG_common
 
-init_pause proc
+draw_pause proc
 	mov al, 0B1h
 	mov bl, 1100b
 	mov bh, 1
@@ -489,7 +489,7 @@ init_pause proc
 	mov dh, 51
 	call move_cursor
 	ret
-endp init_pause
+endp draw_pause
 
 
 draw_vert_wall proc

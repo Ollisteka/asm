@@ -1,23 +1,5 @@
 jmp main
 
-COLUMN_NUM_LM = 044ah
-ROWS_NUM_LM = 0484h
-
-get_prev_head proc
-	get_snake_coord prev_head
-	ret
-endp get_prev_head
-
-get_head proc
-	get_snake_coord head
-	ret
-endp get_head
-
-get_tail proc
-	get_snake_coord tail
-	ret
-endp get_tail
-
 read_byte_lm proc
 	push es
 	push 0
@@ -27,27 +9,6 @@ read_byte_lm proc
 	pop es
 	ret
 endp read_byte_lm
-
-read_word_lm proc
-	;returns ax - word
-	push es
-	push 0
-	pop es
-	mov ax, word ptr es:si
-	pop es
-	ret
-endp read_word_lm
-
-delay proc
-	mov cx, [speed]
-	@@outer_loop:
-		push cx
-		mov cx, 0ffffh
-		@@loop: loop $
-		pop cx
-		loop @@outer_loop
-	ret
-endp delay
 
 wait_for_key_press:
 	xor ax,ax
@@ -72,7 +33,7 @@ hide_cursor:
 	call move_cursor
 	pop dx bx
 	ret
-	
+
 move_cursor:
 ; DH - row
 ; DL - column
@@ -141,7 +102,7 @@ put_str proc
 	loop @@print_char
 	ret
 endp put_str
-	
+
 reg_to_str: ;->AX
 	push ax bx cx dx
     mov di, offset output
