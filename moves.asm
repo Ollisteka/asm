@@ -48,7 +48,6 @@ endp arrow_handler
 move_snake proc
 ;DX = next coords
 	call get_char_at_coord
-	print_reg ax
 	cmp al, FOOD_GOOD
 	je @@grow
 	
@@ -71,6 +70,7 @@ move_snake proc
 	je @@upper_wall
 
 @@simple:
+	mov cx, 1
 	call remove_tail
 	jmp @@move_head
 @@grow:
@@ -116,7 +116,6 @@ move_snake proc
 	sub ax, 2
 	mov di, ax
 	call random
-	print_reg ax
 	mov cx, ax
 	inc cx
 	@@dec_tail:
@@ -305,7 +304,6 @@ move_head proc
 		@@cont:
 		xor cx, cx
 		call remove_tail
-		;pop bx
 		jmp @@clear_tail
 		
 	jmp @@move
