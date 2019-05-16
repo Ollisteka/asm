@@ -118,6 +118,7 @@ move_snake proc
 	call random
 	print_reg ax
 	mov cx, ax
+	inc cx
 	@@dec_tail:
 		call remove_tail
 		loop @@dec_tail
