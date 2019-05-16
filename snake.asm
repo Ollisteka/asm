@@ -71,6 +71,8 @@ model tiny
 	
 	help_msg db "Controls:", CR, LF, "    ",18h,19h,1Ah,1Bh,"   - movement.", CR, LF, "    -/+    - decrease/increase snake's speed.", CR, LF, "    SPACE  - pause. Press SPACE again to continue.", CR, LF,"    F1     - this help. Press F1 again to continue.", CR, LF, "    ESC    - stop game. Press R to restart or ESC again to exit.", CR, LF, CR, LF, "Walls:", CR, LF, "    ", DEATH_WALL,"  -  go in and die", CR, LF, "    ", SWAP_WALL,"  -  go in and swap head and tail", CR, LF, "    ",TELEPORT_WALL,"  -  go in and teleport to the other side", CR, LF, CR, LF, "Foods:", CR, LF, "    ",FOOD_DEATH,"  -  eat it and die", CR, LF, "    ",FOOD_GOOD,"  -  eat it and grow", CR, LF, "    ",FOOD_STRANGE,"  -  eat it and see what happens"
 	help_msg_len = $ - help_msg
+	
+	
 
 	
 
@@ -87,6 +89,9 @@ start:
 	include init.asm
 
 main:
+	include argpars.asm
+
+@@prog:
 	call_save_screen_state
 
 @@new_game:
@@ -142,6 +147,7 @@ main:
 		jne @@exit_loop
 
 	call_restore_screen_state
+@@just_exit:
 	call_exit
 	
 @@help_handler:
