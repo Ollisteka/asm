@@ -15,7 +15,8 @@ model tiny
 	PLUS = 0Dh
 	
 	F1 = 3Bh
-	ESC = 01h
+	ESC_KEY = 01h
+	R_KEY = 13h
 	
 	SWAP_WALL = 1Dh
 	DEATH_WALL = 9Dh
@@ -82,6 +83,7 @@ start:
 	include procs.asm
 	include moves.asm
 	include paint.asm
+	include sound.asm
 
 main:
 	call_save_screen_state
@@ -106,7 +108,7 @@ main:
 	jz @@try_move
 
 	call wait_for_key_press
-	cmp ah, ESC
+	cmp ah, ESC_KEY
 	je @@exit
 	
 	cmp ah, 39h
@@ -134,11 +136,13 @@ main:
 	mov ah, 05h
 	mov al, 02h
 	int 10h
+	mov si, offset FATHER
+	call play_song
 	@@exit_loop:
 		call wait_for_key_press
-		cmp ah, 13h ;Restart
+		cmp ah, R_KEY ;Restart
 		je @@new_game
-		cmp ah, ESC
+		cmp ah, ESC_KEY
 		jne @@exit_loop
 
 	call_restore_screen_state
