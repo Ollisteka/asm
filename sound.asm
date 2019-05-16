@@ -33,8 +33,27 @@ FATHER db G_NOTE, C5_NOTE, Dd5_NOTE, D5_NOTE, C5_NOTE, Dd5_NOTE, C5_NOTE, D5_NOT
 
 NoteFreqTable   DW      26580,25088,23680,22351,21096,19912,18795,17740,16744,15804,14917,14080 ; октава №9 (от "соль-диез" 7-й до "ля" 6-й), таблица для 120 значений (10 октав)
 
+play_good_food_sound:
+	mov al, C_NOTE
+	call play_one_note
+	ret
+	
+
+play_strange_food_sound:
+	mov al, Gd_NOTE
+	call play_one_note
+	ret
+	
+play_one_note:
+;AL - note
+	call get_note_freq
+	mov bx, ax
+	call play_note
+	call turn_note_off
+	ret
 
 play_note proc
+	push cx
 	mov	al,  10110110b	;заносим слово состояния  
 	out	43h, al ;в командный регистр
 	mov	ax, bx  ;1/pitch into AX
@@ -48,7 +67,7 @@ play_note proc
 	;sound note for a while
 	mov	cx, 0ffffh	;set up for delay
 	.wait:	loop	$ ;delay
-	
+	pop cx
 	ret
 play_note endp
 
@@ -98,15 +117,14 @@ mov cx, 0fh
 @@loop:
 	call check_for_key_press
 	jz @@no_keystroke
+
 	cmp ah, ESC_KEY
 	je @@exit
 	
 	cmp ah, R_KEY
 	je @@exit
 @@no_keystroke:
-	push cx
 	call play_note
-	pop cx
 	loop @@loop
 
 	call turn_note_off
@@ -116,9 +134,7 @@ mov cx, 0fh
 @@make_pause:
 		mov cx, 0fh
 	@@loopp:
-		push cx
 		call note_pause
-		pop cx
 		loop @@loopp
 	inc si
 	loop @@play
@@ -129,7 +145,9 @@ mov cx, 0fh
 play_song endp
 
 note_pause proc
+	push cx
 	mov cx, 0ffffh
 	@@loop: loop $
+	pop cx
 	ret
 note_pause endp

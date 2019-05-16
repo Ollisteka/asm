@@ -80,6 +80,7 @@ move_snake proc
 	mov cx, 1
 	call init_food_item
 	inc [good_food_eaten]
+	call play_good_food_sound
 	pop dx
 @@move_head:
 	call move_head
@@ -126,6 +127,8 @@ move_snake proc
 	mov bl, FOOD_COLOR_STRANGE
 	mov cx, 1
 	call init_food_item
+	
+	call play_strange_food_sound
 	
 	jmp @@move_head
 
