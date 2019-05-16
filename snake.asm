@@ -43,13 +43,12 @@ model tiny
 	
 	food_init_count db 3
 	
-	
 	prev_head dw 0
 	head dw 0
 	tail dw 0
 	
 	flags db 0 ; X|X|X|X|X|PAUSE|DEAD|DEC\INC tail
-	self_cross_modes db 1 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
+	self_cross_modes db 0 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
 	upper_wall_type db 1; 
 	direction db 0; 0 = стоим, остальное - сканкоды стрелок
 	speed dw 5
@@ -57,14 +56,17 @@ model tiny
 	output db 4 dup(0), 20h, '$'
 	output_len = $ - output
 	
-	stat_snake_length		db 'Snake length:              '
+	stat_snake_length				db '             Snake length:           '
 	stat_snake_length_len	= $ - stat_snake_length
-	stat_max_snake_length	db '      Record:              '
+	stat_max_snake_length			db '                   Record:           '
 	stat_max_snake_length_len = $ - stat_max_snake_length
-	stat_food_eaten			db '  Food eaten:              '
+	stat_food_eaten					db '      Good food (',FOOD_GOOD,') eaten:           '
 	stat_food_eaten_len		= $ - stat_food_eaten
+	stat_strange_food_eaten			db '  Strange  food (',FOOD_STRANGE,') eaten:           '
+	stat_strange_food_eaten_len		= $ - stat_strange_food_eaten
 	
 	good_food_eaten dw 0
+	strange_food_eaten dw 0
 	
 	CR = 0Dh
 	LF = 0Ah
@@ -242,6 +244,19 @@ print_stat proc
 	mov si, offset output
 	mov cx, output_len - 1
 	call put_str
+	
+	inc dh
+	mov dl, 15
+	mov si, offset stat_strange_food_eaten
+	mov cx, offset stat_strange_food_eaten_len
+	call put_str
+	
+	mov ax, [strange_food_eaten]
+	call num_to_str
+	mov si, offset output
+	mov cx, output_len - 1
+	call put_str
+	
 	ret
 endp print_stat
 

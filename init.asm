@@ -1,6 +1,7 @@
 setup proc
 	mov [direction], 0
 	mov [good_food_eaten], 0
+	mov [strange_food_eaten], 0
 	mov [flags], 0
 	xor ax, ax
 	mov al, [snake_init_length]

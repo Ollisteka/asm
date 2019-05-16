@@ -127,7 +127,7 @@ move_snake proc
 	mov bl, FOOD_COLOR_STRANGE
 	mov cx, 1
 	call init_food_item
-	
+	inc [strange_food_eaten]
 	call play_strange_food_sound
 	
 	jmp @@move_head
