@@ -17,6 +17,7 @@ model tiny
 	F1 = 3Bh
 	ESC_KEY = 01h
 	R_KEY = 13h
+	SPACE_KEY = 39h
 	
 	SWAP_WALL = 1Dh
 	DEATH_WALL = 9Dh
@@ -49,7 +50,7 @@ model tiny
 	head dw 0
 	tail dw 0
 	
-	flags db 0 ; X|X|X|X|X|PAUSE|DEAD|DEC\INC tail
+	flags db 0 ; X|X|X|X|X|X|DEAD|DEC\INC tail
 	self_cross_modes db 0 ;0 = можно самопересекаться 1=можно, но откусится хвост 2=нельзя
 	upper_wall_type db 1; 
 	direction db 0; 0 = стоим, остальное - сканкоды стрелок
@@ -126,7 +127,7 @@ main:
 	cmp ah, ESC_KEY
 	je @@exit
 	
-	cmp ah, 39h
+	cmp ah, SPACE_KEY
 	je @@space_handler
 	
 	cmp ah, F1
@@ -137,10 +138,7 @@ main:
 
 	cmp ah, PLUS
 	je @@increase_speed
-	
-	test [flags], 100b
-	jnz @@loop ;PAUSE	
-	
+
 	@@try_move:
 		call arrow_handler
 
@@ -169,23 +167,9 @@ main:
 	jmp @@loop
 
 @@space_handler:
-	test [flags], 100b
-	jz @@set_pause
-	@@unset_pause:
-		and [flags], 11111011b
-		mov ah, 05h
-		mov al, 00h
-		int 10h
-		jmp @@try_move
-	
-	@@set_pause:
-		or [flags], 100b
-		mov ah, 05h
-		mov al, 01h
-		int 10h
-		jmp @@loop	
+	call space_handler
+	jmp @@loop
 
-	
 @@increase_speed:
 	mov ah, [direction]
 	cmp [speed], 2
@@ -208,6 +192,19 @@ help_handler:
 	@@loop:
 		call wait_for_key_press
 		cmp ah, F1
+		jne @@loop
+	mov ah, 05h
+	mov al, 00h
+	int 10h
+	ret
+	
+space_handler:
+	mov ah, 05h
+	mov al, 01h
+	int 10h
+	@@loop:
+		call wait_for_key_press
+		cmp ah, SPACE_KEY
 		jne @@loop
 	mov ah, 05h
 	mov al, 00h
@@ -297,6 +294,7 @@ print_quick_stat proc
 	mov ax, [super_food_eaten]
 	call put_reg
 	
+	call hide_cursor
 	ret
 endp print_quick_stat
 
@@ -383,6 +381,7 @@ print_stat proc
 	or bl, 10000000b
 	call put_str
 	
+	call hide_cursor
 	
 	pop si
 	ret

@@ -104,10 +104,8 @@ check_for_key_press:
 	
 hide_cursor:
 	push bx dx
-	xor bx, bx
 	xor dx, dx
-	mov dh, 1
-	mov dl, 1
+	mov dh, 25
 	call move_cursor
 	pop dx bx
 	ret
