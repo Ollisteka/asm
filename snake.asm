@@ -29,6 +29,8 @@ model tiny
 	FOOD_COLOR_DEATH = 100b
 	FOOD_STRANGE = 127
 	FOOD_COLOR_STRANGE = 1101b
+	FOOD_SUPER = 15h
+	FOOD_COLOR_SUPER = 10100100b
 
 	MAX_SNAKE_LEN = (FIELD_WIDTH - 2)*(FIELD_HEIGHT - 2)
 	
@@ -62,11 +64,17 @@ model tiny
 	stat_max_snake_length_len = $ - stat_max_snake_length
 	stat_food_eaten					db '      Good food (',FOOD_GOOD,') eaten:           '
 	stat_food_eaten_len		= $ - stat_food_eaten
-	stat_strange_food_eaten			db '  Strange  food (',FOOD_STRANGE,') eaten:           '
+	stat_strange_food_eaten			db '   Strange food (',FOOD_STRANGE,') eaten:           '
 	stat_strange_food_eaten_len		= $ - stat_strange_food_eaten
+	stat_super_food_eaten			db '     Super food (',FOOD_SUPER,') eaten:           '
+	stat_super_food_eaten_len		= $ - stat_super_food_eaten
 	
 	good_food_eaten dw 0
 	strange_food_eaten dw 0
+	super_food_eaten dw 0
+	
+	super_food_cooldown db 0
+	SUPER_FOOD_COOLDOWN_TIME = 5
 	
 	CR = 0Dh
 	LF = 0Ah
@@ -135,11 +143,11 @@ main:
 	jmp @@loop
 	
 @@exit:
+	call determine_final_song
 	call print_stat
 	mov ah, 05h
 	mov al, 02h
 	int 10h
-	mov si, offset FATHER
 	call play_song
 	@@exit_loop:
 		call wait_for_key_press
@@ -201,8 +209,30 @@ help_handler:
 	mov al, 00h
 	int 10h
 	ret
+	
+determine_final_song proc
+	call get_snake_length
+	cmp [snake_length_record], 0
+	je @@first_turn
+
+	cmp ax, [snake_length_record]
+	jbe @@fail
+		mov [snake_length_record], ax
+
+@@father:
+	mov si, offset FATHER
+	ret
+	
+@@first_turn:
+	mov [snake_length_record], ax
+
+@@fail:
+	mov si, offset FAIL
+	ret
+endp determine_final_song
 
 print_stat proc
+	push si
 	mov si, offset stat_snake_length
 	mov cx, offset stat_snake_length_len
 	mov bh, 2
@@ -212,10 +242,6 @@ print_stat proc
 	call put_str
 	
 	call get_snake_length
-	cmp ax, [snake_length_record]
-	jbe @@not_new_record
-		mov [snake_length_record], ax
-@@not_new_record:
 	call num_to_str
 	mov si, offset output
 	mov cx, output_len - 1
@@ -257,6 +283,19 @@ print_stat proc
 	mov cx, output_len - 1
 	call put_str
 	
+	inc dh
+	mov dl, 15
+	mov si, offset stat_super_food_eaten
+	mov cx, offset stat_super_food_eaten_len
+	call put_str
+	
+	mov ax, [super_food_eaten]
+	call num_to_str
+	mov si, offset output
+	mov cx, output_len - 1
+	call put_str
+	
+	pop si
 	ret
 endp print_stat
 

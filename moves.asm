@@ -57,6 +57,9 @@ move_snake proc
 	cmp al, FOOD_STRANGE
 	je @@strange_food
 	
+	cmp al, FOOD_SUPER
+	je @@super_food
+	
 	cmp dl, FIELD_WIDTH-1
 	je @@swap_wall
 	
@@ -70,17 +73,19 @@ move_snake proc
 	je @@upper_wall
 
 @@simple:
+	cmp [super_food_cooldown], 0
+	je @@1
+		dec [super_food_cooldown]
+		jmp @@move_head
+	@@1:
 	mov cx, 1
 	call remove_tail
 	jmp @@move_head
 @@grow:
 	push dx
-	mov al, FOOD_GOOD
-	mov bl, FOOD_COLOR_GOOD
-	mov cx, 1
-	call init_food_item
+	call create_good_food
 	inc [good_food_eaten]
-	call play_good_food_sound
+	call try_create_super_food
 	pop dx
 @@move_head:
 	call move_head
@@ -110,6 +115,12 @@ move_snake proc
 		mov dh, FIELD_HEIGHT-2
 		jmp @@simple
 		
+@@super_food:
+	mov [super_food_cooldown], SUPER_FOOD_COOLDOWN_TIME
+	inc [super_food_eaten]
+	call play_super_food_sound
+	jmp @@move_head
+
 @@strange_food:
 	mov si, 1
 	call get_snake_length
@@ -135,6 +146,29 @@ move_snake proc
 @@exit:
 	ret
 endp move_snake
+
+try_create_super_food proc
+	mov dx, [good_food_eaten]
+	xor dh, dh
+	and dl, 111b
+	cmp dl, SUPER_FOOD_COOLDOWN_TIME
+	jne @@exit
+		mov al, FOOD_SUPER
+		mov bl, FOOD_COLOR_SUPER
+		mov cx, 1
+		call init_food_item
+		call play_super_food_creation_sound
+@@exit:
+	ret
+endp try_create_super_food
+
+create_good_food:
+	mov al, FOOD_GOOD
+	mov bl, FOOD_COLOR_GOOD
+	mov cx, 1
+	call init_food_item
+	call play_good_food_sound
+	ret
 
 
 repaint_head_and_tail proc

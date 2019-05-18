@@ -31,7 +31,29 @@ MAX_NOTE   =       119                     ; максимальный номер
 
 FATHER db G_NOTE, C5_NOTE, Dd5_NOTE, D5_NOTE, C5_NOTE, Dd5_NOTE, C5_NOTE, D5_NOTE, C5_NOTE, Gd_NOTE, Ad_NOTE, G_NOTE, G_NOTE, G_NOTE, G_NOTE,  MAX_NOTE+1, G_NOTE, C5_NOTE, Dd5_NOTE, D5_NOTE, C5_NOTE, Dd5_NOTE, C5_NOTE, D5_NOTE, C5_NOTE, G_NOTE, Fd_NOTE, F_NOTE, F_NOTE, F_NOTE, F_NOTE,  MAX_NOTE+1,  F_NOTE, Gd_NOTE, B_NOTE, D5_NOTE, D5_NOTE, D5_NOTE, D5_NOTE, MAX_NOTE+1, F_NOTE, Gd_NOTE, B_NOTE, C5_NOTE, C5_NOTE, C5_NOTE, C5_NOTE,  MAX_NOTE+1, C_NOTE, Dd_NOTE, Ad_NOTE, Gd_NOTE, G_NOTE, Ad_NOTE,Gd_NOTE,Gd_NOTE, G_NOTE, G_NOTE, C_NOTE - 1, C_NOTE, C_NOTE, C_NOTE,C_NOTE,0
 
+FAIL db D_NOTE, Cd_NOTE, C_NOTE, C_NOTE-1, C_NOTE-1, C_NOTE-1, 0
+
 NoteFreqTable   DW      26580,25088,23680,22351,21096,19912,18795,17740,16744,15804,14917,14080 ; октава №9 (от "соль-диез" 7-й до "ля" 6-й), таблица для 120 значений (10 октав)
+
+play_super_food_creation_sound:
+	mov al, Cd_NOTE
+	call play_one_note
+	mov al, Dd_NOTE
+	call play_one_note
+	mov al, Cd_NOTE
+	call play_one_note
+	mov al, Dd_NOTE
+	call play_one_note
+	ret
+
+play_super_food_sound:
+	mov al, Fd_NOTE
+	call play_one_note
+	mov al, Gd_NOTE
+	call play_one_note
+	mov al, Ad_NOTE
+	call play_one_note
+	ret
 
 play_good_food_sound:
 	mov al, C_NOTE
