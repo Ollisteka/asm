@@ -20,26 +20,26 @@ arrow_handler proc
 	
 @@move_right:
 	inc dl
-	call move_snake
 	mov [direction], RIGHT_ARROW
+	call move_snake
 	ret
 	
 @@move_left:
 	dec dl
-	call move_snake
 	mov [direction], LEFT_ARROW
+	call move_snake
 	ret
 	
 @@move_up:
 	dec dh
-	call move_snake
 	mov [direction], UP_ARROW
+	call move_snake
 	ret
 	
 @@move_down:
 	inc dh
-	call move_snake
 	mov [direction], DOWN_ARROW
+	call move_snake
 	ret
 	
 endp arrow_handler
@@ -94,6 +94,7 @@ move_snake proc
 @@swap_wall:
 	call swap
 	call repaint_head_and_tail
+	call swap_direction
 	jmp @@exit
 	
 @@teleport_wall:
@@ -112,7 +113,7 @@ move_snake proc
 	cmp [upper_wall_type], 2
 	jne @@death_wall
 		;teleport_wall
-		mov dh, FIELD_HEIGHT-2
+		mov dh, FIELD_HEIGHT-3
 		jmp @@simple
 		
 @@super_food:
@@ -247,6 +248,27 @@ swap proc
 @@exit:
 	ret
 endp swap
+
+swap_direction proc
+	push ax
+	mov al, [direction]
+	cmp al, RIGHT_ARROW
+	je @@swap_to_left
+	cmp al, UP_ARROW
+	je @@swap_to_down
+	jmp @@exit
+	
+@@swap_to_left:
+	mov [direction], LEFT_ARROW
+	jmp @@exit
+
+@@swap_to_down:
+	mov [direction], DOWN_ARROW
+	jmp @@exit
+@@exit:
+	pop ax
+	ret
+endp swap_direction
 
 remove_tail proc
 	push ax bx cx dx
