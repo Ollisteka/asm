@@ -55,6 +55,8 @@ model tiny
 	upper_wall_type db 1; 
 	direction db 0; 0 = стоим, остальное - сканкоды стрелок
 	speed dw 5
+	death_mode db 0
+	hard_mode db 0
 	
 	output db 4 dup(0), 20h, '$'
 	output_len = $ - output
@@ -104,7 +106,6 @@ start:
 
 main:
 	include argpars.asm
-
 @@prog:
 	call_save_screen_state
 
@@ -113,6 +114,8 @@ main:
 	
 @@loop:	
 	call print_quick_stat
+	call try_add_deadly_food
+	call try_add_strange_food
 	call delay
 
 	mov al, [flags]
@@ -386,5 +389,57 @@ print_stat proc
 	pop si
 	ret
 endp print_stat
+
+try_add_deadly_food proc
+	cmp [death_mode], 0
+	je @@check_hard
+	
+@@check_hard:
+	cmp [hard_mode], 0
+	je @@exit
+	
+	mov di, 77
+	call get_chance
+	jnz @@exit
+	
+	call add_death_food
+@@exit:
+	ret
+endp try_add_deadly_food
+
+try_add_strange_food proc
+	cmp [hard_mode], 0
+	je @@exit
+	
+	mov di, 70
+	call get_chance
+	jnz @@exit
+	
+	call add_strange_food
+@@exit:
+	ret
+endp try_add_strange_food
+
+get_chance:
+;DI = upper edge
+;ZF = 1 iff got chance
+	mov si, 0
+	call random
+	xor ax, 3
+	ret
+	
+add_death_food:
+	mov al, FOOD_DEATH
+	mov bl, FOOD_COLOR_DEATH
+	mov cx, 1
+	call init_food_item
+	ret
+	
+add_strange_food:
+	mov al, FOOD_STRANGE
+	mov bl, FOOD_COLOR_STRANGE
+	mov cx, 1
+	call init_food_item
+	ret
 
 end start

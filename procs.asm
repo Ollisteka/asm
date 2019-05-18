@@ -37,6 +37,7 @@ set_zf:
 
 
 arg_parse proc ;arg_mask, arg_var, error
+;DX = 1 => boolean
 	pop bp
 	pop ax
 	pop bx
@@ -47,10 +48,15 @@ arg_parse proc ;arg_mask, arg_var, error
 	or byte ptr args_flags, al
 	call move_pointer
 	call skip_spaces
-	call str2dec
+	cmp dx, 1
+	je @@boolean
+		call str2dec
+		jmp @@not_boolean
+	@@boolean:
+		mov ax, 1
+@@not_boolean:
 	pop bx
 	mov [bx*1], al
-	;call check_args_consistency
 	push bp
 	ret
 endp arg_parse

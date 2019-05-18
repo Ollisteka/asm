@@ -37,6 +37,7 @@
 		push offset snake_init_length
 		push offset @@double_arg_error
 		push LENGTH_MASK
+		xor dx, dx
 		call arg_parse; PAGE_MASK, error, page_num
 		push cx
 		mov ax, 1
@@ -65,6 +66,7 @@
 		push offset food_init_count
 		push offset @@double_arg_error
 		push FOOD_MASK
+		xor dx, dx
 		call arg_parse; PAGE_MASK, error, page_num
 		push cx
 		mov ax, 1
@@ -92,6 +94,7 @@
 		push offset upper_wall_type
 		push offset @@double_arg_error
 		push UPPER_WALL_MASK
+		xor dx, dx
 		call arg_parse; PAGE_MASK, error, page_num
 		push cx
 		mov ax, 0
@@ -113,11 +116,12 @@
 	je @@selfcross_parse
 	mov bl, 'S'
 	cmp bl, [si*1]
-	jne @@try_blink_parse
+	jne @@try_death_mode_parse
 	@@selfcross_parse:
 		push offset self_cross_modes
 		push offset @@double_arg_error
 		push SELFCROSS_MASK
+		xor dx, dx
 		call arg_parse; PAGE_MASK, error, page_num
 		push cx
 		mov ax, 0
@@ -132,6 +136,36 @@
 @@self_cross_modes_error:
 	call_print self_cross_modes_err_msg
 	jmp @@just_exit
+	
+@@try_death_mode_parse:
+	mov bl, 'd'
+	cmp bl, [si*1]
+	je @@death_mode
+	mov bl, 'D'
+	cmp bl, [si*1]
+	jne @@try_hard_mode_parse
+	@@death_mode:
+		push offset death_mode
+		push offset @@double_arg_error
+		push DEATHMODE_MASK
+		mov dx, 1
+		call arg_parse; PAGE_MASK, error, page_num
+		jmp @@parse_loop
+		
+@@try_hard_mode_parse:
+	mov bl, 'h'
+	cmp bl, [si*1]
+	je @@hard_mode
+	mov bl, 'H'
+	cmp bl, [si*1]
+	jne @@try_blink_parse
+	@@hard_mode:
+		push offset hard_mode
+		push offset @@double_arg_error
+		push HARDMODE_MASK
+		mov dx, 1
+		call arg_parse; PAGE_MASK, error, page_num
+		jmp @@parse_loop
 
 @@try_blink_parse:
 	jmp @@args_error
@@ -156,9 +190,11 @@ snake_err_msg  db "Snake init length must be inside [1, 25] range", "$"
 food_err_msg  db "Max food amount must be inside [1, 50] range", "$"
 upper_wall_type_err_msg  db "Wall type must be inside [0, 2] range", "$"
 self_cross_modes_err_msg  db "Self-cross mode must be inside [0, 2] range", "$"
-help_args_msg db "Play snake and enjoy your life!",CR,LF,"/s - self-cross mode:",CR,LF,"    0 - allowed;",CR,LF,"    1 - will cut a tail;",CR,LF,"    2 - deadly;",CR,LF,"/u - upper wall type:",CR,LF,"    0 - death wall;",CR,LF,"    1 - swap wall;",CR,LF,"    2 - teleport wall;",CR,LF,"/l - snake init length (default is 15, max is 25);",CR,LF,"/f - food init amount (default is 3, max is 50);",CR,LF,"/? - this help", "$"
-args_flags db 0 ;X|X|X|X|S|U|L|F
+help_args_msg db "Play snake and enjoy your life!",CR,LF,"/s - self-cross mode:",CR,LF,"    0 - allowed;",CR,LF,"    1 - will cut a tail;",CR,LF,"    2 - deadly;",CR,LF,"/u - upper wall type:",CR,LF,"    0 - death wall;",CR,LF,"    1 - swap wall;",CR,LF,"    2 - teleport wall;",CR,LF,"/l - snake init length (default is 15, max is 25);",CR,LF,"/f - food init amount (default is 3, max is 50);",CR,LF,"/d - death mode. Deadly food will be added with time;",CR,LF,"/h - hard mode. Both deadly and strange food will be added with time;",CR,LF,"/? - this help", "$"
+args_flags db 0 ;X|X|H|D|S|U|L|F
 FOOD_MASK = 1
 LENGTH_MASK = 2
 UPPER_WALL_MASK = 4
 SELFCROSS_MASK = 8
+DEATHMODE_MASK = 16
+HARDMODE_MASK = 32

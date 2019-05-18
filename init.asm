@@ -72,15 +72,8 @@ init_food proc
 	mov cl, [food_init_count]
 	call init_food_item
 	
-	mov al, FOOD_DEATH
-	mov bl, FOOD_COLOR_DEATH
-	mov cx, 1
-	call init_food_item
-	
-	mov al, FOOD_STRANGE
-	mov bl, FOOD_COLOR_STRANGE
-	mov cx, 1
-	call init_food_item
+	call add_death_food
+	call add_strange_food
 	
 	ret
 endp init_food

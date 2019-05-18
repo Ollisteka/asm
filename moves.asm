@@ -134,10 +134,7 @@ move_snake proc
 		loop @@dec_tail
 
 
-	mov al, FOOD_STRANGE
-	mov bl, FOOD_COLOR_STRANGE
-	mov cx, 1
-	call init_food_item
+	call add_strange_food
 	inc [strange_food_eaten]
 	call play_strange_food_sound
 	
