@@ -49,7 +49,7 @@ endp draw_upper_wall
 
 draw_swap_wall proc
 	mov al, SWAP_WALL
-	mov cx, FIELD_HEIGHT
+	mov cx, FIELD_HEIGHT-1
 	mov dl, FIELD_WIDTH-1
 	mov dh, 0 ;row
 	call draw_vert_wall
@@ -59,7 +59,7 @@ endp draw_swap_wall
 
 draw_teleport_wall proc
 	mov al, TELEPORT_WALL
-	mov cx, FIELD_HEIGHT
+	mov cx, FIELD_HEIGHT-1
 	mov dl, 0
 	mov dh, 0 ;row
 	call draw_vert_wall
@@ -70,7 +70,7 @@ endp draw_teleport_wall
 draw_death_wall proc
 	mov al, DEATH_WALL
 	mov cx, FIELD_WIDTH-1
-	mov dh, FIELD_HEIGHT-1
+	mov dh, FIELD_HEIGHT-2
 	mov dl, 0 ;column
 	call draw_hor_wall
 	ret

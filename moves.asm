@@ -66,7 +66,7 @@ move_snake proc
 	cmp dl, 0
 	je @@teleport_wall
 	
-	cmp dh, FIELD_HEIGHT-1
+	cmp dh, FIELD_HEIGHT-2
 	je @@death_wall
 	
 	cmp dh, 0
@@ -447,7 +447,7 @@ get_random_pos proc
 	mov di, FIELD_HEIGHT-2
 	call random
 	push ax
-	mov di, FIELD_WIDTH-2
+	mov di, FIELD_WIDTH-3
 	call random
 	mov bx, ax
 	pop ax

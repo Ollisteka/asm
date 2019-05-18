@@ -108,6 +108,7 @@ main:
 	call setup
 	
 @@loop:	
+	call print_quick_stat
 	call delay
 
 	mov al, [flags]
@@ -230,6 +231,83 @@ determine_final_song proc
 	mov si, offset FAIL
 	ret
 endp determine_final_song
+
+quick_stat_length db 'Length: '
+quick_stat_length_len = $ - quick_stat_length
+
+print_quick_stat proc
+	mov dh, FIELD_HEIGHT - 1
+	mov dl, 0
+	mov bh, 0
+	mov si, offset quick_stat_length
+	mov cx, offset quick_stat_length_len
+	mov bl, 010b
+	call put_str
+	
+	call get_snake_length
+	call num_to_str
+	mov si, offset output
+	mov cx, output_len - 1
+	mov bl, 111b
+	call put_str
+
+	mov al, FOOD_GOOD
+	mov bl, FOOD_COLOR_GOOD
+	call put_char
+	mov bl, 111b
+	inc dl
+	call move_cursor
+	mov al, ':'
+	call put_char
+	add dl, 2
+	call move_cursor
+	
+	mov ax, [good_food_eaten]
+	call put_reg
+	
+	
+	mov al, FOOD_STRANGE
+	mov bl, FOOD_COLOR_STRANGE
+	call put_char
+	mov bl, 111b
+	inc dl
+	call move_cursor
+	mov al, ':'
+	call put_char
+	add dl, 2
+	call move_cursor
+	
+	mov ax, [strange_food_eaten]
+	call put_reg
+	
+	mov al, FOOD_SUPER
+	mov bl, FOOD_COLOR_SUPER
+	and bl, 01111111b
+	call put_char
+	mov bl, 111b
+	inc dl
+	call move_cursor
+	mov al, ':'
+	call put_char
+	add dl, 2
+	call move_cursor
+	mov ax, [super_food_eaten]
+	call put_reg
+	
+	ret
+endp print_quick_stat
+
+put_reg proc
+;AX - value
+;BH - page_num
+;BL = attribute
+;DX = coords
+	call num_to_str
+	mov si, offset output
+	mov cx, output_len - 1
+	call put_str
+	ret
+endp put_reg
 
 print_stat proc
 	push si
