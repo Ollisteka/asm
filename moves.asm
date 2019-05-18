@@ -340,6 +340,8 @@ move_head proc
 	call is_intersected
 	jnz @@move
 	
+	inc [self_cut_count]
+	
 	xor bx, bx
 
 	@@clear_tail:

@@ -65,12 +65,15 @@ model tiny
 	stat_snake_length_len	= $ - stat_snake_length
 	stat_max_snake_length			db '                   Record:           '
 	stat_max_snake_length_len = $ - stat_max_snake_length
+	stat_self_cut_count				db '                 Self cut:           '
+	stat_self_cut_count_len		= $ - stat_self_cut_count
 	stat_food_eaten					db '      Good food (',FOOD_GOOD,') eaten:           '
 	stat_food_eaten_len		= $ - stat_food_eaten
 	stat_strange_food_eaten			db '   Strange food (',FOOD_STRANGE,') eaten:           '
 	stat_strange_food_eaten_len		= $ - stat_strange_food_eaten
 	stat_super_food_eaten			db '     Super food (',FOOD_SUPER,') eaten:           '
 	stat_super_food_eaten_len		= $ - stat_super_food_eaten
+
 	
 	stat_hint db '    Press R to restart and ESC to exit!!!'
 	stat_hint_len = $ - stat_hint
@@ -78,6 +81,8 @@ model tiny
 	good_food_eaten dw 0
 	strange_food_eaten dw 0
 	super_food_eaten dw 0
+	
+	self_cut_count dw 0
 	
 	super_food_cooldown db 0
 	SUPER_FOOD_COOLDOWN_TIME = 5
@@ -324,10 +329,7 @@ print_stat proc
 	call put_str
 	
 	call get_snake_length
-	call num_to_str
-	mov si, offset output
-	mov cx, output_len - 1
-	call put_str
+	call put_reg
 	
 	inc dh
 	mov dl, 15
@@ -336,11 +338,21 @@ print_stat proc
 	call put_str
 	
 	mov ax, [snake_length_record]
-	call num_to_str
-	mov si, offset output
-	mov cx, output_len - 1
+	call put_reg
+	
+	cmp [self_cross_modes], 1
+	jne @@food_stat
+	
+	inc dh
+	mov dl, 15
+	mov si, offset stat_self_cut_count
+	mov cx, offset stat_self_cut_count_len
 	call put_str
 	
+	mov ax, [self_cut_count]
+	call put_reg
+	
+@@food_stat:
 	inc dh
 	mov dl, 15
 	mov si, offset stat_food_eaten
@@ -348,10 +360,7 @@ print_stat proc
 	call put_str
 	
 	mov ax, [good_food_eaten]
-	call num_to_str
-	mov si, offset output
-	mov cx, output_len - 1
-	call put_str
+	call put_reg
 	
 	inc dh
 	mov dl, 15
@@ -360,10 +369,7 @@ print_stat proc
 	call put_str
 	
 	mov ax, [strange_food_eaten]
-	call num_to_str
-	mov si, offset output
-	mov cx, output_len - 1
-	call put_str
+	call put_reg
 	
 	inc dh
 	mov dl, 15
@@ -372,10 +378,7 @@ print_stat proc
 	call put_str
 	
 	mov ax, [super_food_eaten]
-	call num_to_str
-	mov si, offset output
-	mov cx, output_len - 1
-	call put_str
+	call put_reg
 
 	add dh, 3
 	mov dl, 15
