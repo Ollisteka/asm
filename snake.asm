@@ -69,6 +69,9 @@ model tiny
 	stat_super_food_eaten			db '     Super food (',FOOD_SUPER,') eaten:           '
 	stat_super_food_eaten_len		= $ - stat_super_food_eaten
 	
+	stat_hint db '    Press R to restart and ESC to exit!!!'
+	stat_hint_len = $ - stat_hint
+	
 	good_food_eaten dw 0
 	strange_food_eaten dw 0
 	super_food_eaten dw 0
@@ -372,6 +375,14 @@ print_stat proc
 	mov si, offset output
 	mov cx, output_len - 1
 	call put_str
+
+	add dh, 3
+	mov dl, 15
+	mov si, offset stat_hint
+	mov cx, offset stat_hint_len
+	or bl, 10000000b
+	call put_str
+	
 	
 	pop si
 	ret
