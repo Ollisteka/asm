@@ -146,11 +146,11 @@ move_snake proc
 endp move_snake
 
 try_create_super_food proc
-	mov dx, [good_food_eaten]
-	xor dh, dh
-	and dl, 111b
-	cmp dl, SUPER_FOOD_COOLDOWN_TIME
-	jne @@exit
+	mov ax, [good_food_eaten]
+	mov bl, SUPER_FOOD_COOLDOWN_TIME
+	div bl
+	test ah, ah 
+	jnz @@exit
 		mov al, FOOD_SUPER
 		mov bl, FOOD_COLOR_SUPER
 		mov cx, 1
@@ -251,15 +251,40 @@ endp swap
 
 swap_direction proc
 	push ax
-	mov al, [direction]
-	cmp al, RIGHT_ARROW
+	call get_prev_head
+	;DX
+	inc dl
+	call get_char_at_coord
+	cmp al, SNAKE_CHAR
 	je @@swap_to_left
-	cmp al, UP_ARROW
+	dec dl
+
+	inc dh
+	cmp al, SNAKE_CHAR
+	je @@swap_to_up
+	dec dh
+
+	dec dh
+	cmp al, SNAKE_CHAR
 	je @@swap_to_down
+	inc dh
+	
+	dec dl
+	cmp al, SNAKE_CHAR
+	je @@swap_to_right
+	
+	jmp @@exit
+	
+@@swap_to_up:
+	mov [direction], UP_ARROW
 	jmp @@exit
 	
 @@swap_to_left:
 	mov [direction], LEFT_ARROW
+	jmp @@exit
+	
+@@swap_to_right:
+	mov [direction], RIGHT_ARROW
 	jmp @@exit
 
 @@swap_to_down:
@@ -441,6 +466,7 @@ dec_head proc
 endp dec_head
 
 get_prev_head proc
+;DX
 	get_snake_coord prev_head
 	ret
 endp get_prev_head

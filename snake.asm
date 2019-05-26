@@ -78,6 +78,9 @@ model tiny
 	stat_hint db '    Press R to restart and ESC to exit!!!'
 	stat_hint_len = $ - stat_hint
 	
+	quick_stat_help db 'F1: help   SPACE: pause  ESC: exit'
+	quick_stat_help_len = $ - quick_stat_help
+	
 	good_food_eaten dw 0
 	strange_food_eaten dw 0
 	super_food_eaten dw 0
@@ -302,6 +305,13 @@ print_quick_stat proc
 	mov ax, [super_food_eaten]
 	call put_reg
 	
+	add dl, 9
+	mov bl, 1111b 
+	mov si, offset quick_stat_help
+	xor cx, cx
+	mov cl, quick_stat_length
+	call put_str
+	
 	call hide_cursor
 	ret
 endp print_quick_stat
@@ -321,7 +331,7 @@ endp put_reg
 print_stat proc
 	push si
 	mov si, offset stat_snake_length
-	mov cx, offset stat_snake_length_len
+	mov cx, stat_snake_length_len
 	mov bh, 2
 	mov bl, 010b
 	mov dh, 10

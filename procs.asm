@@ -296,7 +296,12 @@ random proc
 	mov	dx, word [seed]
 	or	dx, dx
 	jnz	@@1
-	mov   ax, word[ds:006ch]
+	push es
+	mov ax, 0
+	push ax
+	pop es
+	mov   ax, word[es:046ch]
+	pop es
 	mov	dx, ax
 @@1:	
 	mov	ax, word [seed2]
